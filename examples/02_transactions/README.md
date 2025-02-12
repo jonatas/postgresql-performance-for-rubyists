@@ -114,6 +114,31 @@ PostgreSQL automatically detects deadlocks:
 3. Chooses a victim transaction
 4. Rolls back the victim
 
+## Key Learnings from Deadlock Simulation
+
+### 1. Connection Pool Management
+- Each thread needs its own database connection in multi-threaded scenarios
+- Use `ActiveRecord::Base.connection_pool.with_connection` to ensure proper connection handling
+- Connections are automatically returned to the pool after the block completes
+
+### 2. Transaction Rollback Behavior
+- Deadlocks cause automatic transaction rollback
+- Both transactions involved in a deadlock may be affected
+- Need to explicitly reload records after deadlock to get current state
+- Always verify final state after transaction completion
+
+### 3. Lock Ordering
+- Inconsistent lock ordering is a primary cause of deadlocks
+- To prevent deadlocks, always acquire locks in a consistent order
+- Example: Always lock records in ascending ID order
+- Use `Account.lock.where(id: [id1, id2]).order(:id)` pattern
+
+### 4. Multi-threaded Transaction Patterns
+- Reset initial state before running concurrent transactions
+- Use explicit transaction blocks
+- Handle both specific (Deadlocked) and generic exceptions
+- Verify final state through explicit reload
+
 ## Practical Exercises - Transaction Management
 
 1. **Basic Transaction Handling**

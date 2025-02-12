@@ -1,7 +1,74 @@
 require_relative '../../config/database'
-require_relative './storage_explorer'
 
 class Employee < ActiveRecord::Base
+  def self.table_stats
+    connection.execute(<<~SQL).first
+      SELECT 
+        n_live_tup as live_tuples,
+        n_dead_tup as dead_tuples,
+        n_tup_ins as inserts,
+        n_tup_upd as updates,
+        n_tup_del as deletes
+      FROM pg_stat_user_tables
+      WHERE relname = 'employees'
+    SQL
+  end
+
+  def self.storage_sizes
+    {
+      total_size: connection.execute("SELECT pg_size_pretty(pg_total_relation_size('employees'))").first['pg_size_pretty'],
+      table_size: connection.execute("SELECT pg_size_pretty(pg_relation_size('employees'))").first['pg_size_pretty'],
+      index_size: connection.execute("SELECT pg_size_pretty(pg_indexes_size('employees'))").first['pg_size_pretty'],
+      toast_size: connection.execute(<<~SQL).first['pg_size_pretty']
+        SELECT pg_size_pretty(pg_total_relation_size(reltoastrelid)) 
+        FROM pg_class 
+        WHERE relname = 'employees' 
+        AND reltoastrelid != 0
+      SQL
+    }
+  end
+
+  def analyze_tuple_size
+    # Calculate theoretical minimum size without alignment padding
+    header_size = 23  # Standard tuple header size
+    null_bitmap_size = (attributes.size + 7) / 8  # Round up to nearest byte
+
+    puts "\nAnalyzing tuple for Employee #{name}:"
+    puts "1. Header size: #{header_size} bytes"
+    puts "2. Null bitmap size: #{null_bitmap_size} bytes"
+    puts "\nColumn sizes and alignment:"
+    
+    total_theoretical_size = header_size + null_bitmap_size
+    
+    attributes.each do |name, value|
+      next if name == "id"  # Skip primary key as it's handled differently
+      
+      size = case value
+      when String
+        value.bytesize
+      when Integer
+        4
+      when TrueClass, FalseClass
+        1
+      when Date
+        4
+      when BigDecimal
+        8
+      when Hash
+        value.to_json.bytesize
+      when Time
+        8
+      else
+        value.nil? ? 0 : value.to_s.bytesize
+      end
+      
+      total_theoretical_size += size
+      
+      puts "- #{name}: #{size} bytes #{value.nil? ? '(NULL)' : ''} #{value.is_a?(String) || value.is_a?(Hash) ? '(variable)' : '(fixed)'}"
+    end
+    
+    puts "\nTheoretical minimum size: #{total_theoretical_size} bytes"
+  end
 end
 
 # Create the employees table if it doesn't exist
@@ -19,48 +86,6 @@ end
 
 # Clean up existing records after ensuring table exists
 Employee.delete_all
-
-def analyze_tuple_size(record)
-  # Calculate theoretical minimum size without alignment padding
-  header_size = 23  # Standard tuple header size
-  null_bitmap_size = (record.attributes.size + 7) / 8  # Round up to nearest byte
-
-  puts "\nAnalyzing tuple for Employee #{record.name}:"
-  puts "1. Header size: #{header_size} bytes"
-  puts "2. Null bitmap size: #{null_bitmap_size} bytes"
-  puts "\nColumn sizes and alignment:"
-  
-  total_theoretical_size = header_size + null_bitmap_size
-  
-  record.attributes.each do |name, value|
-    next if name == "id"  # Skip primary key as it's handled differently
-    
-    size = case value
-    when String
-      value.bytesize
-    when Integer
-      4
-    when TrueClass, FalseClass
-      1
-    when Date
-      4
-    when BigDecimal
-      8
-    when Hash
-      value.to_json.bytesize
-    when Time
-      8
-    else
-      value.nil? ? 0 : value.to_s.bytesize
-    end
-    
-    total_theoretical_size += size
-    
-    puts "- #{name}: #{size} bytes #{value.nil? ? '(NULL)' : ''} #{value.is_a?(String) || value.is_a?(Hash) ? '(variable)' : '(fixed)'}"
-  end
-  
-  puts "\nTheoretical minimum size: #{total_theoretical_size} bytes"
-end
 
 # Create employees with different tuple storage patterns
 puts "\n1. Minimal Employee (mostly NULL values)..."
@@ -142,7 +167,7 @@ mixed_employee = Employee.create!(
   puts "\n#{'-' * 50}"
   puts label
   puts "-" * 50
-  analyze_tuple_size(employee)
+  employee.analyze_tuple_size
 end
 
 # Get actual storage statistics
@@ -151,12 +176,23 @@ ActiveRecord::Base.connection.execute('VACUUM ANALYZE employees;')
 puts "\n#{'-' * 50}"
 puts "ACTUAL STORAGE ANALYSIS"
 puts "-" * 50
-stats = StorageExplorer.analyze_detailed_storage('employees').first
-puts JSON.pretty_generate(stats)
+puts "\nStorage Sizes:"
+puts JSON.pretty_generate(Employee.storage_sizes)
+
+puts "\nTable Statistics:"
+puts JSON.pretty_generate(Employee.table_stats)
 
 puts "\nKey Observations:"
 puts "1. NULL values only consume space in the null bitmap"
 puts "2. Variable-length fields have overhead for length"
 puts "3. Alignment padding adds to theoretical size"
 puts "4. TOAST may be used for large values (> 2KB)"
-puts "5. Actual size includes page overhead and alignment" 
+puts "5. Actual size includes page overhead and alignment"
+
+# Class methods
+Employee.storage_sizes  # Get storage sizes
+Employee.table_stats   # Get table statistics
+
+# Instance method
+employee = Employee.first
+employee.analyze_tuple_size  # Analyze tuple size for a specific employee 

@@ -31,6 +31,7 @@ In this module, you'll explore:
 ## PostgreSQL Storage Layout
 
 ### 1. Basic Page Structure (8KB)
+Every PostgreSQL table is stored as an array of 8KB pages. Here's how a single page is organized:
 
 ```mermaid
 graph TD
@@ -50,22 +51,51 @@ graph TD
 ```
 
 ### 2. Tuple Structure
+Each row (tuple) in a table follows this structure, optimized for both storage efficiency and quick access:
 
 ```mermaid
-graph LR
+graph TD
     subgraph "Single Tuple Layout"
+        direction TB
         TH[Tuple Header<br/>23 bytes] --> NB[Null Bitmap<br/>2 bytes for 9-16 cols]
-        NB --> DF[Data Fields]
+        NB --> DF[Data Fields Area]
         DF --> AP[Alignment Padding]
+        
+        subgraph "Data Fields Detail"
+            direction TB
+            F1[Fixed-Length Fields] --> |"8 bytes"|FD1[bigint, decimal]
+            F1 --> |"4 bytes"|FD2[integer, date]
+            F1 --> |"1 byte"|FD3[boolean]
+            
+            F2[Variable-Length Fields] --> |"header + data"|VD1[varchar, text]
+            F2 --> |"header + data"|VD2[jsonb]
+            F2 --> |"header + data"|VD3[binary]
+        end
+        
+        DF --> F1
+        DF --> F2
     end
 
     style TH fill:#ddf,stroke:#333,stroke-width:2px
     style NB fill:#ffd,stroke:#333,stroke-width:2px
     style DF fill:#fbf,stroke:#333,stroke-width:2px
     style AP fill:#ddd,stroke:#333,stroke-width:2px
+    style F1 fill:#bbf,stroke:#333,stroke-width:2px
+    style F2 fill:#fbf,stroke:#333,stroke-width:2px
+    style FD1 fill:#bbf,stroke:#333,stroke-width:2px
+    style FD2 fill:#bbf,stroke:#333,stroke-width:2px
+    style FD3 fill:#bbf,stroke:#333,stroke-width:2px
+    style VD1 fill:#fbf,stroke:#333,stroke-width:2px
+    style VD2 fill:#fbf,stroke:#333,stroke-width:2px
+    style VD3 fill:#fbf,stroke:#333,stroke-width:2px
+
+    %% Add annotations
+    AN1[NULL values only use<br/>1 bit in null bitmap] --> NB
+    AN2[8-byte alignment<br/>for efficiency] --> AP
 ```
 
 ### 3. Data Field Types and Sizes
+PostgreSQL optimizes storage by using different strategies for fixed and variable-length types:
 
 ```mermaid
 graph TD
@@ -96,6 +126,7 @@ graph TD
 ```
 
 ### 4. TOAST Storage System
+Large values (>2KB) are handled by PostgreSQL's TOAST (The Oversized-Attribute Storage Technique) system:
 
 ```mermaid
 graph LR
@@ -114,8 +145,7 @@ graph LR
 ```
 
 ### Storage Size Examples
-
-Here are real-world examples of how different tuple types consume space:
+Real-world measurements from our test database showing how different types of rows consume space:
 
 ```mermaid
 graph LR
