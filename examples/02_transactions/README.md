@@ -247,6 +247,83 @@ PostgreSQL automatically detects deadlocks:
    end
    ```
 
+## Exercise Resolution Learnings
+
+### Basic Transaction Example
+```
+=== Basic Transaction Example ===
+Initial balance: 0.0
+Balance after update: 100.0
+Transaction failed: Simulated error
+Balance after rollback: 0.0
+```
+**Key Learnings:**
+1. Proper initialization is crucial - always ensure accounts start with a valid balance
+2. Transactions properly rollback on error, maintaining data consistency
+3. Using `reload` after operations ensures we see the actual database state
+4. The `update_column` bypass can be useful for initial setup, but should be used sparingly
+
+### Deadlock Simulation Results
+```
+Deadlock detected (attempt 1/3): PG::TRDeadlockDetected
+DETAIL: Process 10899 waits for ShareLock on transaction 48746007; blocked by process 10898.
+Process 10898 waits for ShareLock on transaction 48746008; blocked by process 10899.
+```
+**Key Learnings:**
+1. Deadlocks are automatically detected by PostgreSQL
+2. Retry mechanism with exponential backoff helps resolve deadlocks
+3. Final account balances remain consistent despite deadlocks
+4. Detailed error messages help diagnose lock conflicts
+
+### Isolation Level Behaviors
+
+#### Read Committed
+```
+Initial balance read: 1000.0
+Concurrent transaction modified balance (+50)
+Balance after concurrent modification: 1050.0
+Final balance after our update (+100): 1150.0
+```
+- Sees and incorporates concurrent changes
+- No serialization failures
+- Most permissive but least consistent
+
+#### Repeatable Read & Serializable
+```
+Initial balance read: 1000.0
+Concurrent transaction modified balance (+50)
+Balance after concurrent modification: 1000.0
+Serialization failure occurred...
+```
+**Key Learnings:**
+1. Higher isolation levels prevent reading intermediate states
+2. Serialization failures require retry logic
+3. Maximum retry limits prevent infinite retry loops
+4. Each retry sees the latest committed state
+
+### Best Practices Discovered
+1. **Balance Management:**
+   - Always initialize accounts with valid balances
+   - Use `reload` to ensure fresh data
+   - Handle nil values explicitly
+
+2. **Concurrency Handling:**
+   - Implement retry mechanisms with maximum attempts
+   - Use exponential backoff between retries
+   - Reset test data between isolation level tests
+
+3. **Error Handling:**
+   - Catch specific exceptions (`PG::TRDeadlockDetected`, `ActiveRecord::SerializationFailure`)
+   - Provide clear error messages
+   - Verify final state after errors
+
+4. **Testing Strategy:**
+   - Reset state before each test
+   - Test each isolation level independently
+   - Verify both success and failure scenarios
+
+These practical exercises demonstrate the importance of proper transaction management and the trade-offs between different isolation levels in a real-world scenario.
+
 ## Learning Objectives Checklist
 
 After completing this module, you should understand:
