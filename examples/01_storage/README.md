@@ -28,6 +28,137 @@ In this module, you'll explore:
 3. How PostgreSQL handles large values using TOAST
 4. The relationship between theoretical and actual storage sizes
 
+## PostgreSQL Storage Layout
+
+### 1. Basic Page Structure (8KB)
+
+```mermaid
+graph TD
+    subgraph "PostgreSQL Page Layout"
+        direction TB
+        PH[Page Header<br/>24 bytes] --> IP[Item Pointers<br/>4 bytes per item]
+        IP --> FS[Free Space<br/>Variable Size]
+        FS --> TD[Tuple Storage]
+        TD --> SA[Special Area<br/>Index-specific data]
+    end
+
+    style PH fill:#f9f,stroke:#333,stroke-width:2px
+    style IP fill:#bbf,stroke:#333,stroke-width:2px
+    style FS fill:#bfb,stroke:#333,stroke-width:2px
+    style TD fill:#fbf,stroke:#333,stroke-width:2px
+    style SA fill:#fbb,stroke:#333,stroke-width:2px
+```
+
+### 2. Tuple Structure
+
+```mermaid
+graph LR
+    subgraph "Single Tuple Layout"
+        TH[Tuple Header<br/>23 bytes] --> NB[Null Bitmap<br/>2 bytes for 9-16 cols]
+        NB --> DF[Data Fields]
+        DF --> AP[Alignment Padding]
+    end
+
+    style TH fill:#ddf,stroke:#333,stroke-width:2px
+    style NB fill:#ffd,stroke:#333,stroke-width:2px
+    style DF fill:#fbf,stroke:#333,stroke-width:2px
+    style AP fill:#ddd,stroke:#333,stroke-width:2px
+```
+
+### 3. Data Field Types and Sizes
+
+```mermaid
+graph TD
+    subgraph "Fixed-Length Types"
+        direction LR
+        F1[bigint<br/>8 bytes] --- F2[integer<br/>4 bytes]
+        F2 --- F3[boolean<br/>1 byte]
+        F3 --- F4[date<br/>4 bytes]
+        F4 --- F5[decimal<br/>8 bytes]
+        F5 --- F6[timestamp<br/>8 bytes]
+    end
+
+    subgraph "Variable-Length Types"
+        direction LR
+        V1[varchar<br/>variable + metadata] --- V2[jsonb<br/>variable + metadata]
+        V2 --- V3[binary<br/>variable + metadata]
+    end
+
+    style F1 fill:#bbf,stroke:#333,stroke-width:2px
+    style F2 fill:#bbf,stroke:#333,stroke-width:2px
+    style F3 fill:#bbf,stroke:#333,stroke-width:2px
+    style F4 fill:#bbf,stroke:#333,stroke-width:2px
+    style F5 fill:#bbf,stroke:#333,stroke-width:2px
+    style F6 fill:#bbf,stroke:#333,stroke-width:2px
+    style V1 fill:#fbf,stroke:#333,stroke-width:2px
+    style V2 fill:#fbf,stroke:#333,stroke-width:2px
+    style V3 fill:#fbf,stroke:#333,stroke-width:2px
+```
+
+### 4. TOAST Storage System
+
+```mermaid
+graph LR
+    subgraph "TOAST Handling"
+        T1[Table Row] --> C{Size > 2KB?}
+        C -->|No| I[Store Inline]
+        C -->|Yes| TP[TOAST Pointer<br/>18 bytes]
+        TP --> ET[(External<br/>TOAST Table)]
+    end
+
+    style T1 fill:#ddf,stroke:#333,stroke-width:2px
+    style C fill:#ffd,stroke:#333,stroke-width:2px
+    style I fill:#bfb,stroke:#333,stroke-width:2px
+    style TP fill:#fdb,stroke:#333,stroke-width:2px
+    style ET fill:#bdf,stroke:#333,stroke-width:2px
+```
+
+### Storage Size Examples
+
+Here are real-world examples of how different tuple types consume space:
+
+```mermaid
+graph LR
+    subgraph "Tuple Size Examples"
+        direction TB
+        MT[Minimal Tuple<br/>mostly NULLs<br/>54 bytes] --- TT[Typical Tuple<br/>mixed types<br/>123 bytes]
+        TT --- DT[Detailed Tuple<br/>large fields<br/>2434 bytes]
+        DT --- CT[Compact Tuple<br/>small fields<br/>85 bytes]
+        CT --- VT[Mixed Tuple<br/>varied sizes<br/>844 bytes]
+    end
+
+    style MT fill:#bfb,stroke:#333,stroke-width:2px
+    style TT fill:#fbf,stroke:#333,stroke-width:2px
+    style DT fill:#fdb,stroke:#333,stroke-width:2px
+    style CT fill:#bbf,stroke:#333,stroke-width:2px
+    style VT fill:#ffd,stroke:#333,stroke-width:2px
+```
+
+### Key Points About Storage
+
+1. **Page Layout**:
+   - Fixed 8KB size
+   - Contains header, pointers, and tuple data
+   - Special area for index-specific information
+
+2. **Tuple Structure**:
+   - Fixed header (23 bytes)
+   - Null bitmap size depends on column count
+   - Data fields with alignment requirements
+   - Padding ensures proper alignment
+
+3. **Data Types Impact**:
+   - Fixed-length types have predictable sizes
+   - Variable-length types need extra metadata
+   - NULL values only use 1 bit in null bitmap
+   - Large values use TOAST storage
+
+4. **TOAST System**:
+   - Handles values larger than 2KB
+   - Uses pointer in main tuple (18 bytes)
+   - Supports compression
+   - External storage in separate table
+
 ## Part 1: Understanding Tuples and Page Layout
 
 In PostgreSQL, each row in a table is called a "tuple". These tuples are stored in fixed-size pages (blocks) of 8KB by default. Understanding tuple structure is crucial for:
@@ -58,9 +189,35 @@ graph TD
         end
         
         subgraph "Tuple Storage Area"
-            TD --> T1[Tuple 1<br/>Header + Values]
-            TD --> T2[Tuple 2<br/>Header + Values]
-            TD --> T3[...]
+            TD --> T1[Tuple 1]
+            
+            subgraph "Tuple Structure"
+                TH[Tuple Header<br/>23 bytes]
+                NB[Null Bitmap<br/>2 bytes for 9-16 cols]
+                
+                subgraph "Data Fields"
+                    direction TB
+                    F1[id: bigint<br/>8 bytes]
+                    F2[name: varchar<br/>variable + metadata]
+                    F3[employee_id: integer<br/>4 bytes]
+                    F4[active: boolean<br/>1 byte]
+                    F5[hire_date: date<br/>4 bytes]
+                    F6[salary: decimal<br/>8 bytes]
+                    F7[details: jsonb<br/>variable + metadata]
+                    F8[photo: binary<br/>variable + metadata]
+                    F9[timestamps<br/>8 bytes each]
+                end
+                
+                PAD[Alignment Padding<br/>For 8-byte boundaries]
+            end
+            
+            T2[Tuple 2<br/>Header + Values]
+            T3[...]
+        end
+        
+        subgraph "TOAST Pointer Area"
+            TP[TOAST Pointers<br/>For Large Values]
+            TP --> |Points to| ET[(External<br/>TOAST Table)]
         end
         
         subgraph "Special Area"
@@ -73,6 +230,18 @@ graph TD
     style FS fill:#bfb,stroke:#333,stroke-width:2px
     style TD fill:#fbf,stroke:#333,stroke-width:2px
     style SS fill:#fbb,stroke:#333,stroke-width:2px
+    style TH fill:#ddf,stroke:#333,stroke-width:2px
+    style NB fill:#ffd,stroke:#333,stroke-width:2px
+    style PAD fill:#ddd,stroke:#333,stroke-width:2px
+    style TP fill:#fdb,stroke:#333,stroke-width:2px
+    style ET fill:#bdf,stroke:#333,stroke-width:2px
+
+    %% Add annotations for NULL handling
+    AN1[NULL values only use<br/>1 bit in null bitmap]
+    AN2[TOAST-able fields move to<br/>external storage if > 2KB]
+    
+    AN1 --> NB
+    AN2 --> TP
 ```
 
 ### Key Learnings from Tuple Analysis
