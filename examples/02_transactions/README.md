@@ -39,7 +39,7 @@ graph TD
 ```
 
 ### 2. Transaction Isolation Levels
-PostgreSQL supports four isolation levels:
+PostgreSQL supports four isolation levels, each with different guarantees:
 
 ```mermaid
 graph TB
@@ -55,9 +55,94 @@ graph TB
         style S fill:#fdf,stroke:#333
     end
 
-    note["* Behaves as Read Committed<br/>in PostgreSQL"]
+    note["* Behaves as Read Committed in PostgreSQL"]
     note --> RL
 ```
+
+#### Isolation Level Characteristics
+
+| Level | Dirty Read | Non-Repeatable Read | Phantom Read | Serialization Anomaly |
+|-------|------------|---------------------|--------------|----------------------|
+| Read Uncommitted* | Prevented | Possible | Possible | Possible |
+| Read Committed | Prevented | Possible | Possible | Possible |
+| Repeatable Read | Prevented | Prevented | Prevented** | Possible |
+| Serializable | Prevented | Prevented | Prevented | Prevented |
+
+\* PostgreSQL treats Read Uncommitted as Read Committed
+\** PostgreSQL's implementation prevents phantom reads
+
+#### Example Output from Our Deadlock Simulation:
+```
+Starting concurrent transfers (this should cause a deadlock)...
+👱‍♀️ Alice initiating transfer...
+👨 Bob initiating transfer...
+Transferring 100 from Bob to Alice
+Deadlock detected (attempt 1/3): PG::TRDeadlockDetected
+DETAIL: Process 6338 waits for ShareLock on transaction 48693606; blocked by process 6339.
+Process 6339 waits for ShareLock on transaction 48693605; blocked by process 6338.
+```
+
+#### Using Different Isolation Levels
+
+```ruby
+# Read Committed (default)
+Account.transaction do
+  # Default isolation level
+  account.update!(balance: new_balance)
+end
+
+# Repeatable Read
+Account.transaction(isolation: :repeatable_read) do
+  # Prevents non-repeatable reads
+  balance = account.balance
+  sleep(1) # Simulate work
+  # Will see same balance even if another transaction changed it
+  account.update!(balance: balance + 100)
+end
+
+# Serializable
+Account.transaction(isolation: :serializable) do
+  # Strongest isolation - prevents all concurrency anomalies
+  # May throw SerializationFailure - application must retry
+  balance = account.balance
+  account.update!(balance: balance + 100)
+end
+```
+
+### Common Concurrency Phenomena
+
+1. **Dirty Read** (prevented in PostgreSQL)
+   - Transaction reads data written by concurrent uncommitted transaction
+
+2. **Non-Repeatable Read** (possible in Read Committed)
+   ```ruby
+   # Transaction 1           # Transaction 2
+   read(A)  # value = 100
+                           update(A) to 200
+                           commit
+   read(A)  # value = 200   
+   # Different result!
+   ```
+
+3. **Phantom Read** (possible in Read Committed)
+   ```ruby
+   # Transaction 1           # Transaction 2
+   count(*) # returns 10
+                           insert new row
+                           commit
+   count(*) # returns 11
+   # Different result!
+   ```
+
+4. **Serialization Anomaly** (possible in all except Serializable)
+   ```ruby
+   # Transaction 1           # Transaction 2
+   sum = total_balance()    sum = total_balance()
+   insert(-100)            insert(-100)
+   commit                  commit
+   # Both transactions saw the same sum but both subtracted,
+   # potentially leading to negative balance
+   ```
 
 ### 3. Deadlock Scenario
 Our `transaction_lab.rb` demonstrates a classic deadlock:
