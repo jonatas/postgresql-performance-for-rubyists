@@ -405,6 +405,151 @@ From our examples:
    # Compare TOAST storage size
    ```
 
+## Part 3: Write-Ahead Log (WAL) Impact
+
+PostgreSQL's Write-Ahead Logging (WAL) is crucial for ensuring data durability and consistency. Understanding WAL's impact on storage and performance is essential for database optimization.
+
+### WAL Structure and Behavior
+
+```mermaid
+graph LR
+    subgraph "WAL Processing Flow"
+        direction LR
+        T[Transaction] --> |1. Write| WB[WAL Buffer]
+        WB --> |2. Sequential Write| WF[WAL Files]
+        T --> |3. Modify| DB[(Database Pages)]
+        WF --> |4. Checkpoint| DB
+        
+        subgraph "WAL Segments"
+            direction TB
+            W1[WAL Segment 1<br/>16MB] --> W2[WAL Segment 2<br/>16MB]
+            W2 --> W3[WAL Segment 3<br/>16MB]
+        end
+    end
+
+    style T fill:#f9f,stroke:#333,stroke-width:2px
+    style WB fill:#bbf,stroke:#333,stroke-width:2px
+    style WF fill:#bfb,stroke:#333,stroke-width:2px
+    style DB fill:#fdb,stroke:#333,stroke-width:2px
+    style W1 fill:#ddf,stroke:#333,stroke-width:2px
+    style W2 fill:#ddf,stroke:#333,stroke-width:2px
+    style W3 fill:#ddf,stroke:#333,stroke-width:2px
+```
+
+### Key WAL Concepts
+
+1. **WAL Records**:
+   - Each change generates WAL records
+   - Contains before/after page images
+   - Sequential write for performance
+   - Default segment size: 16MB
+
+2. **Storage Impact**:
+   - Minimum WAL storage = 2 segments
+   - Each transaction adds WAL overhead
+   - Full page writes on checkpoints
+   - WAL archiving needs extra space
+
+3. **Performance Considerations**:
+   - WAL writes are sequential
+   - Checkpoints flush modified pages
+   - WAL archiving affects I/O
+   - Transaction size impacts WAL volume
+
+### Practical Exercises - WAL Analysis
+
+1. **WAL Generation Rate**
+   ```ruby
+   # Measure WAL generation for different operations:
+   def analyze_wal_impact
+     # Get initial WAL location
+     initial_wal = ActiveRecord::Base.connection.execute(
+       "SELECT pg_current_wal_lsn()"
+     ).first["pg_current_wal_lsn"]
+
+     # Perform operations
+     yield
+
+     # Get final WAL location
+     final_wal = ActiveRecord::Base.connection.execute(
+       "SELECT pg_current_wal_lsn()"
+     ).first["pg_current_wal_lsn"]
+
+     # Calculate WAL bytes
+     wal_bytes = ActiveRecord::Base.connection.execute(
+       "SELECT pg_wal_lsn_diff($1, $2)", [final_wal, initial_wal]
+     ).first["pg_wal_lsn_diff"]
+
+     puts "WAL bytes generated: #{wal_bytes}"
+   end
+
+   # Test different scenarios
+   analyze_wal_impact do
+     # Scenario 1: Single row insert
+     Employee.create!(name: "Test", employee_id: 1)
+   end
+
+   analyze_wal_impact do
+     # Scenario 2: Batch insert
+     Employee.insert_all!(
+       100.times.map { |i| 
+         {name: "Test #{i}", employee_id: i}
+       }
+     )
+   end
+
+   analyze_wal_impact do
+     # Scenario 3: Large update
+     Employee.update_all(salary: 50000)
+   end
+   ```
+
+2. **Checkpoint Impact**
+   ```ruby
+   # Force checkpoint and measure timing:
+   def measure_checkpoint
+     start_time = Time.now
+     ActiveRecord::Base.connection.execute("CHECKPOINT")
+     end_time = Time.now
+     
+     puts "Checkpoint duration: #{end_time - start_time} seconds"
+   end
+
+   # Test checkpoint after different workloads
+   measure_checkpoint  # Baseline
+   # Generate some work...
+   measure_checkpoint  # After work
+   ```
+
+3. **WAL Settings Impact**
+   ```ruby
+   # Compare performance with different WAL settings:
+   def test_wal_settings
+     configurations = [
+       "SET synchronous_commit TO ON",
+       "SET synchronous_commit TO OFF",
+       "SET wal_compression TO ON",
+       "SET wal_compression TO OFF"
+     ]
+
+     configurations.each do |config|
+       ActiveRecord::Base.connection.execute(config)
+       analyze_wal_impact { yield }
+     end
+   end
+
+   # Test with sample workload
+   test_wal_settings do
+     1000.times do |i|
+       Employee.create!(
+         name: "Test #{i}",
+         employee_id: i,
+         details: { data: "X" * 1000 }
+       )
+     end
+   end
+   ```
+
 ## Learning Objectives Checklist
 
 After completing this module, you should understand:
@@ -413,6 +558,7 @@ After completing this module, you should understand:
 - [ ] Alignment requirements for different data types
 - [ ] When and how TOAST storage is triggered
 - [ ] The relationship between theoretical and actual storage sizes
+- [ ] WAL's impact on storage and performance
 
 ## Files in this Module
 
