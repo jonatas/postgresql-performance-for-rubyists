@@ -1,0 +1,81 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    activemodel (8.0.1)
+      activesupport (= 8.0.1)
+    activerecord (8.0.1)
+      activemodel (= 8.0.1)
+      activesupport (= 8.0.1)
+      timeout (>= 0.4.0)
+    activesupport (8.0.1)
+      base64
+      benchmark (>= 0.3)
+      bigdecimal
+      concurrent-ruby (~> 1.0, >= 1.3.1)
+      connection_pool (>= 2.2.5)
+      drb
+      i18n (>= 1.6, < 2)
+      logger (>= 1.4.2)
+      minitest (>= 5.1)
+      securerandom (>= 0.3)
+      tzinfo (~> 2.0, >= 2.0.5)
+      uri (>= 0.13.1)
+    base64 (0.2.0)
+    benchmark (0.4.0)
+    bigdecimal (3.1.9)
+    coderay (1.1.3)
+    concurrent-ruby (1.3.4)
+    connection_pool (2.5.0)
+    diff-lcs (1.5.1)
+    dotenv (3.1.7)
+    drb (2.2.1)
+    i18n (1.14.6)
+      concurrent-ruby (~> 1.0)
+    logger (1.6.5)
+    method_source (1.1.0)
+    minitest (5.25.4)
+    ostruct (0.6.1)
+    pg (1.5.9)
+    pry (0.15.2)
+      coderay (~> 1.1)
+      method_source (~> 1.0)
+    rake (13.2.1)
+    rspec (3.13.0)
+      rspec-core (~> 3.13.0)
+      rspec-expectations (~> 3.13.0)
+      rspec-mocks (~> 3.13.0)
+    rspec-core (3.13.2)
+      rspec-support (~> 3.13.0)
+    rspec-expectations (3.13.3)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-mocks (3.13.2)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-support (3.13.2)
+    securerandom (0.4.1)
+    timeout (0.4.3)
+    timescaledb (0.3.1)
+      activerecord
+      activesupport
+      ostruct
+      pg (~> 1.2)
+    tzinfo (2.0.6)
+      concurrent-ruby (~> 1.0)
+    uri (1.0.2)
+
+PLATFORMS
+  arm64-darwin-24
+  ruby
+
+DEPENDENCIES
+  activerecord
+  dotenv
+  pg
+  pry
+  rake
+  rspec
+  timescaledb
+
+BUNDLED WITH
+   2.6.1
