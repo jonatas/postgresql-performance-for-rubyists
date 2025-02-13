@@ -55,7 +55,7 @@ graph TB
         style S fill:#fdf,stroke:#333
     end
 
-    note["* Behaves as Read Committed in PostgreSQL"]
+    note[" Behaves as Read Committed in PostgreSQL"]
     note --> RL
 ```
 
@@ -63,15 +63,18 @@ graph TB
 
 | Level | Dirty Read | Non-Repeatable Read | Phantom Read | Serialization Anomaly |
 |-------|------------|---------------------|--------------|----------------------|
-| Read Uncommitted* | Prevented | Possible | Possible | Possible |
+| Read Uncommitted [1] | Prevented | Possible | Possible | Possible |
 | Read Committed | Prevented | Possible | Possible | Possible |
-| Repeatable Read | Prevented | Prevented | Prevented** | Possible |
+| Repeatable Read | Prevented | Prevented | Prevented [2] | Possible |
 | Serializable | Prevented | Prevented | Prevented | Prevented |
 
-\* PostgreSQL treats Read Uncommitted as Read Committed
-\** PostgreSQL's implementation prevents phantom reads
+1. PostgreSQL treats Read Uncommitted as Read Committed
+2. PostgreSQL's implementation prevents phantom reads
 
 #### Example Output from Our Deadlock Simulation:
+
+Run `ruby transaction_lab.rb` to see the output.
+
 ```
 Starting concurrent transfers (this should cause a deadlock)...
 👱‍♀️ Alice initiating transfer...
