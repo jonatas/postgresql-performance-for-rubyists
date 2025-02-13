@@ -33,30 +33,48 @@ In this module, you'll explore:
 ### 1. Basic Page Layout (8KB)
 Every PostgreSQL table is stored as an array of 8KB pages. Here's a simplified view of how a single page is organized:
 
-```
-+------------------------+ ◄─── 0
-|      Page Header      |      24 bytes
-|        (24B)          |
-+------------------------+ ◄─── 24
-|    Item Pointers      |      Variable
-|     (4B each)         |      (4 bytes per tuple)
-+------------------------+ ◄─── Varies
-|                       |
-|     Free Space        |      Growing down
-|                       |      
-|          ▼            |
-+------------------------+
-|          ▲            |
-|     Tuple Data        |      Growing up
-|    (Variable size)    |
-+------------------------+ ◄─── 8192 (8KB)
+```ascii
++--------------------------------+ 0
+|           Page Header          |
+|             (24B)              |
++--------------------------------+ 24
+|         Item Pointers          |
+| (4B each, points to row data) |
++--------------------------------+ varies
+|                                |
+|          Free Space            |
+|     (available for growth)     |
+|                                |
++--------------------------------+ varies
+|    Row 1 Data                  |
+|    - Header (23B)             |
+|    - Null bitmap              |
+|    - User data                |
+|    - Alignment padding        |
++--------------------------------+
+|    Row 2 Data                  |
+|    - Header (23B)             |
+|    - Null bitmap              |
+|    - User data                |
+|    - Alignment padding        |
++--------------------------------+
+|           More Rows...         |
++--------------------------------+
+|    Special Space (optional)    |
+|    (index data, etc.)         |
++--------------------------------+ 8192
 ```
 
-Key components:
-- Page Header (24 bytes): Contains metadata about the page
-- Item Pointers: Array of pointers to actual tuples (4 bytes each)
-- Free Space: Available space for new or updated tuples
-- Tuple Data: The actual row data, growing upwards from bottom
+Key Components:
+1. Page Header (24B): Metadata about the page
+2. Item Pointers: Array pointing to tuple locations
+3. Free Space: Available for new/updated tuples
+4. Tuple Data: Actual row data with structure:
+   - Header (23B)
+   - Null bitmap (2B for 9-16 cols)
+   - Column values
+   - Alignment padding
+5. TOAST Pointers: For values > 2KB
 
 ### 2. Tuple Structure
 Each row (tuple) in a table follows this structure, optimized for both storage efficiency and quick access:
@@ -103,6 +121,7 @@ graph TD
 ```
 
 ### 3. Data Field Types and Sizes
+
 PostgreSQL optimizes storage by using different strategies for fixed and variable-length types:
 
 ```mermaid
@@ -213,73 +232,82 @@ A tuple contains:
 - User data (actual column values)
 - Alignment padding
 
-Here's a representation of a PostgreSQL page layout:
+```ascii
++--------------------------------+
+|        Tuple Header            |
+|          (23 bytes)            |
++--------------------------------+
+|        Null Bitmap             |
+|      (2+ bytes, varies)        |
++--------------------------------+
+|                                |
+|        User Data               |
+|     (Column Values)            |
+|                                |
++--------------------------------+
+|     Alignment Padding          |
+|    (as needed for 8-byte       |
+|     boundary alignment)        |
++--------------------------------+
+```
 
-```mermaid
-graph TD
-    subgraph "PostgreSQL Page (8KB)"
-        direction TB
-        PH[Page Header<br/>24 bytes] --> IP[Item Pointers<br/>4 bytes per item]
-        IP --> |points to| TD[Tuple Data]
-        
-        subgraph "Free Space"
-            FS[Variable Size<br/>Available for new tuples]
-        end
-        
-        subgraph "Tuple Storage Area"
-            TD --> T1[Tuple 1]
-            
-            subgraph "Tuple Structure"
-                TH[Tuple Header<br/>23 bytes]
-                NB[Null Bitmap<br/>2 bytes for 9-16 cols]
-                
-                subgraph "Data Fields"
-                    direction TB
-                    F1[id: bigint<br/>8 bytes]
-                    F2[name: varchar<br/>variable + metadata]
-                    F3[employee_id: integer<br/>4 bytes]
-                    F4[active: boolean<br/>1 byte]
-                    F5[hire_date: date<br/>4 bytes]
-                    F6[salary: decimal<br/>8 bytes]
-                    F7[details: jsonb<br/>variable + metadata]
-                    F8[photo: binary<br/>variable + metadata]
-                    F9[timestamps<br/>8 bytes each]
-                end
-                
-                PAD[Alignment Padding<br/>For 8-byte boundaries]
-            end
-            
-            T2[Tuple 2<br/>Header + Values]
-            T3[...]
-        end
-        
-        subgraph "TOAST Pointer Area"
-            TP[TOAST Pointers<br/>For Large Values]
-            TP --> |Points to| ET[(External<br/>TOAST Table)]
-        end
-        
-        subgraph "Special Area"
-            SS[Special Space<br/>Index-specific data]
-        end
-    end
+Now, filling it with some hypothetical data for an employee record:
 
-    style PH fill:#f9f,stroke:#333,stroke-width:2px
-    style IP fill:#bbf,stroke:#333,stroke-width:2px
-    style FS fill:#bfb,stroke:#333,stroke-width:2px
-    style TD fill:#fbf,stroke:#333,stroke-width:2px
-    style SS fill:#fbb,stroke:#333,stroke-width:2px
-    style TH fill:#ddf,stroke:#333,stroke-width:2px
-    style NB fill:#ffd,stroke:#333,stroke-width:2px
-    style PAD fill:#ddd,stroke:#333,stroke-width:2px
-    style TP fill:#fdb,stroke:#333,stroke-width:2px
-    style ET fill:#bdf,stroke:#333,stroke-width:2px
+```ascii
++--------------------------------+
+|        Tuple Header            |
+|          (23 bytes)            |
++--------------------------------+
+|        Null Bitmap             |
+|     (2 bytes - 00000000)       |
++--------------------------------+
+|      id: 1 (bigint)            |
+|          (8 bytes)             |
++--------------------------------+
+|    name: "John Smith"          |
+|    (12 bytes + 4 byte header)  |
++--------------------------------+
+|    employee_id: 1001           |
+|          (4 bytes)             |
++--------------------------------+
+|    active: true                |
+|          (1 byte)              |
++--------------------------------+
+|    hire_date: 2024-03-20       |
+|          (4 bytes)             |
++--------------------------------+
+|    salary: 75000.00            |
+|          (8 bytes)             |
++--------------------------------+
+|    details: {"role": "dev"}    |
+|    (19 bytes + 4 byte header)  |
++--------------------------------+
+|    photo: null                 |
+|          (0 bytes)             |
++--------------------------------+
+|    created_at: timestamp       |
+|          (8 bytes)             |
++--------------------------------+
+|    updated_at: timestamp       |
+|          (8 bytes)             |
++--------------------------------+
+|     Alignment Padding          |
+|          (3 bytes)             |
++--------------------------------+
 
-    %% Add annotations for NULL handling
-    AN1[NULL values only use<br/>1 bit in null bitmap]
-    AN2[TOAST-able fields move to<br/>external storage if > 2KB]
-    
-    AN1 --> NB
-    AN2 --> TP
+Total size: 108 bytes
+
+Storage Breakdown:
+1. Header (23B): Contains metadata like tuple length
+2. Null Bitmap (2B): One bit per column (photo is null)
+3. Data Fields:
+   - Fixed-length fields are stored directly
+   - Variable-length fields (name, details) include a 4-byte header
+   - Timestamps stored as microseconds since 2000
+4. Padding (3B): Added to maintain 8-byte alignment
+
+Note: This example shows an "ideal" case where all values fit in the main tuple. 
+Larger values (>2KB) would be stored in TOAST tables with only a pointer here.
 ```
 
 ### Key Learnings from Tuple Analysis
