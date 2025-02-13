@@ -30,25 +30,33 @@ In this module, you'll explore:
 
 ## PostgreSQL Storage Layout
 
-### 1. Basic Page Structure (8KB)
-Every PostgreSQL table is stored as an array of 8KB pages. Here's how a single page is organized:
+### 1. Basic Page Layout (8KB)
+Every PostgreSQL table is stored as an array of 8KB pages. Here's a simplified view of how a single page is organized:
 
-```mermaid
-graph TD
-    subgraph "PostgreSQL Page Layout"
-        direction TB
-        PH[Page Header<br/>24 bytes] --> IP[Item Pointers<br/>4 bytes per item]
-        IP --> FS[Free Space<br/>Variable Size]
-        FS --> TD[Tuple Storage]
-        TD --> SA[Special Area<br/>Index-specific data]
-    end
-
-    style PH fill:#f9f,stroke:#333,stroke-width:2px
-    style IP fill:#bbf,stroke:#333,stroke-width:2px
-    style FS fill:#bfb,stroke:#333,stroke-width:2px
-    style TD fill:#fbf,stroke:#333,stroke-width:2px
-    style SA fill:#fbb,stroke:#333,stroke-width:2px
 ```
++------------------------+ ◄─── 0
+|      Page Header      |      24 bytes
+|        (24B)          |
++------------------------+ ◄─── 24
+|    Item Pointers      |      Variable
+|     (4B each)         |      (4 bytes per tuple)
++------------------------+ ◄─── Varies
+|                       |
+|     Free Space        |      Growing down
+|                       |      
+|          ▼            |
++------------------------+
+|          ▲            |
+|     Tuple Data        |      Growing up
+|    (Variable size)    |
++------------------------+ ◄─── 8192 (8KB)
+```
+
+Key components:
+- Page Header (24 bytes): Contains metadata about the page
+- Item Pointers: Array of pointers to actual tuples (4 bytes each)
+- Free Space: Available space for new or updated tuples
+- Tuple Data: The actual row data, growing upwards from bottom
 
 ### 2. Tuple Structure
 Each row (tuple) in a table follows this structure, optimized for both storage efficiency and quick access:
@@ -405,7 +413,155 @@ From our examples:
    # Compare TOAST storage size
    ```
 
-## Part 3: Write-Ahead Log (WAL) Impact
+## Part 3: Column Ordering and Alignment
+
+Our experiments with column ordering revealed interesting insights about PostgreSQL's storage behavior and optimization opportunities.
+
+### Column Ordering Impact
+
+```mermaid
+graph TD
+    subgraph "Unoptimized Layout"
+        direction TB
+        U1[1-byte boolean] --> U2[8-byte decimal]
+        U2 --> U3[1-byte char]
+        U3 --> U4[8-byte float]
+        U4 --> U5[1-byte boolean]
+        U5 --> U6[8-byte decimal]
+        style U1 fill:#ffd,stroke:#333,stroke-width:2px
+        style U2 fill:#bbf,stroke:#333,stroke-width:2px
+        style U3 fill:#ffd,stroke:#333,stroke-width:2px
+        style U4 fill:#bbf,stroke:#333,stroke-width:2px
+        style U5 fill:#ffd,stroke:#333,stroke-width:2px
+        style U6 fill:#bbf,stroke:#333,stroke-width:2px
+    end
+
+    subgraph "Optimized Layout"
+        direction TB
+        O1[8-byte group] --> O2[8-byte group]
+        O2 --> O3[4-byte group]
+        O3 --> O4[1-byte group]
+        style O1 fill:#bbf,stroke:#333,stroke-width:2px
+        style O2 fill:#bbf,stroke:#333,stroke-width:2px
+        style O3 fill:#bfb,stroke:#333,stroke-width:2px
+        style O4 fill:#ffd,stroke:#333,stroke-width:2px
+    end
+```
+
+### Key Findings from Column Ordering Tests
+
+1. **Maximum Impact Scenario (12.66% storage savings)**:
+   - Unoptimized: 209 bytes per tuple
+   - Optimized: 184 bytes per tuple
+   - Storage saved: 25 bytes per tuple
+   - Conditions:
+     * Many columns with different alignments
+     * Alternating 1-byte and 8-byte columns
+     * Strict alignment requirements (float, decimal)
+     * No TOAST storage interference
+
+2. **Alignment Requirements**:
+   ```
+   Data Type        Required Alignment
+   --------------------------------
+   boolean          1 byte
+   char(1)         1 byte
+   smallint        2 bytes
+   integer         4 bytes
+   float/decimal   8 bytes
+   timestamp       8 bytes
+   ```
+
+3. **Padding Behavior**:
+   - Each 8-byte column after a 1-byte column needs 7 bytes padding
+   - 2-byte columns after 1-byte need 1 byte padding
+   - 4-byte columns after 1-byte need 3 bytes padding
+   - Grouped similar-aligned columns minimize padding
+
+### Best Practices for Column Ordering
+
+1. **Optimal Ordering Strategy**:
+   ```sql
+   CREATE TABLE optimized_table (
+     -- 8-byte aligned columns first
+     id bigint,
+     salary decimal(15,2),
+     bonus decimal(15,2),
+     -- 4-byte aligned columns
+     department_id integer,
+     hire_date date,
+     -- 2-byte aligned columns
+     small_value smallint,
+     -- 1-byte columns together
+     active boolean,
+     status boolean,
+     type char(1)
+   );
+   ```
+
+2. **Guidelines**:
+   - Group columns by alignment requirements
+   - Put larger alignments first (8-byte → 4-byte → 2-byte → 1-byte)
+   - Keep small columns together
+   - Consider TOAST behavior for large columns
+
+3. **When to Apply**:
+   - Tables with many columns
+   - Mixed column alignments
+   - High volume tables
+   - Performance-critical systems
+
+### Practical Impact Analysis
+
+```mermaid
+graph LR
+    subgraph "Storage Impact Factors"
+        S1[Column Count] --> |More columns = larger impact| I[Impact]
+        S2[Data Types] --> |Mixed alignments = more savings| I
+        S3[Row Count] --> |Millions of rows = significant| I
+        S4[TOAST] --> |Can mask benefits| I
+        
+        style S1 fill:#bbf,stroke:#333,stroke-width:2px
+        style S2 fill:#fbf,stroke:#333,stroke-width:2px
+        style S3 fill:#bfb,stroke:#333,stroke-width:2px
+        style S4 fill:#ffd,stroke:#333,stroke-width:2px
+        style I fill:#ddf,stroke:#333,stroke-width:2px
+    end
+```
+
+### Limitations and Considerations
+
+1. **PostgreSQL's Internal Optimizations**:
+   - Automatic alignment handling
+   - TOAST storage system
+   - NULL value optimization
+   - Internal tuple layout adjustments
+
+2. **When Benefits Are Limited**:
+   - Small tables
+   - Homogeneous column types
+   - TOAST-heavy tables
+   - Sparse tables (many NULLs)
+
+3. **Trade-offs**:
+   - Maintenance complexity
+   - Code readability
+   - Schema evolution
+   - Application logic impact
+
+### Example Analysis Query
+
+```sql
+SELECT 
+    avg(pg_column_size(t.*)) as avg_size,
+    min(pg_column_size(t.*)) as min_size,
+    max(pg_column_size(t.*)) as max_size,
+    pg_size_pretty(sum(pg_column_size(t.*))) as total_raw_size,
+    pg_size_pretty(pg_total_relation_size('%s')) as total_size_with_indexes
+FROM table_name t;
+```
+
+## Part 4: Write-Ahead Log (WAL) Impact
 
 PostgreSQL's Write-Ahead Logging (WAL) is crucial for ensuring data durability and consistency. Understanding WAL's impact on storage and performance is essential for database optimization.
 
