@@ -1,6 +1,32 @@
 # PostgreSQL Storage Deep Dive
 
-This module focuses on understanding PostgreSQL's physical storage mechanisms and how different data types and sizes affect storage organization. Through practical examples, you'll learn how PostgreSQL organizes data at the lowest level and how this impacts database performance and storage efficiency.
+This module provides a practical exploration of PostgreSQL's storage mechanisms, progressing from basic concepts to advanced optimization techniques.
+
+## Learning Path
+
+1. **Basic Storage Concepts** (practice_storage.rb)
+   - Understanding 8KB pages
+   - Basic tuple structure
+   - Data type storage requirements
+   - Simple storage examples
+
+2. **Tuple Deep Dive** (practice_tuple.rb)
+   - Detailed tuple analysis
+   - NULL handling
+   - Alignment requirements
+   - Real-world tuple patterns
+
+3. **TOAST Storage** (practice_storage.rb, practice_tuple.rb)
+   - Large value handling
+   - TOAST thresholds
+   - Storage strategies
+   - Compression options
+
+4. **WAL and Performance** (practice_wal.rb)
+   - Write-Ahead Log basics
+   - Transaction impacts
+   - Checkpoint behavior
+   - Performance optimization
 
 ## Database Structure
 
@@ -27,6 +53,10 @@ In this module, you'll explore:
 2. How different data types affect storage and alignment
 3. How PostgreSQL handles large values using TOAST
 4. The relationship between theoretical and actual storage sizes
+
+You can run the examples by running `bundle exec ruby examples/01_storage/practice_storage.rb`
+and `bundle exec ruby examples/01_storage/practice_tuple.rb`.
+
 
 ## PostgreSQL Storage Layout
 
