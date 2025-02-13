@@ -7,3 +7,5 @@ gem 'rake'
 gem 'rspec'
 gem 'dotenv' 
 gem 'timescaledb'
+gem 'terminal-table'
+gem 'colorize'  # For colorized terminal output
