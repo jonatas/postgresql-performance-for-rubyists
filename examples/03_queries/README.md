@@ -494,25 +494,199 @@ def exercise_2_join_optimization
 end
 ```
 
+## Learning Highlights from Examples
+
+### Query Optimization Lab Insights
+
+1. **Basic Query Analysis (Exercise 1)**
+   ```sql
+   -- Simple WHERE vs IN condition
+   WHERE country = 'USA'              -- Estimated 10 rows
+   WHERE country IN ('USA', 'Canada') -- Estimated 20 rows
+   ```
+   Key Observations:
+   - Simple equality (`=`) shows better performance (~0.013ms) than IN clause (~0.012ms)
+   - Both use Sequential Scan due to small table size
+   - Row estimation is accurate (10 and 20 rows respectively)
+   - Buffer hits are minimal (2 shared hits) indicating good memory usage
+
+2. **JOIN Optimization (Exercise 2)**
+   ```sql
+   -- Simple JOIN vs Multiple JOINs with aggregation
+   SELECT orders.* FROM orders JOIN customers ...        -- Hash Join strategy
+   SELECT orders.*, COUNT(line_items.id) as items_count -- HashAggregate + Hash Join
+   ```
+   Key Learnings:
+   - Simple JOIN: Uses Hash Join strategy (0.122ms)
+   - Complex JOIN: Uses HashAggregate with multiple Hash Joins (0.679ms)
+   - Memory usage increases with join complexity (9kB → 57kB)
+   - Proper index usage on customer_id reduces lookup time
+
+3. **Aggregation Optimization (Exercise 3)**
+   ```sql
+   -- Simple vs Complex aggregation
+   GROUP BY customer_id                              -- HashAggregate
+   GROUP BY customer_id HAVING SUM(...) > 1000      -- GroupAggregate with Sort
+   ```
+   Notable Points:
+   - Simple aggregation uses HashAggregate (0.129ms)
+   - Complex aggregation requires sorting (1.849ms)
+   - Memory usage varies (24kB vs 214kB)
+   - HAVING clause adds significant overhead
+
+4. **Subquery Optimization (Exercise 4)**
+   ```sql
+   -- Subquery vs JOIN approach
+   WHERE id IN (SELECT ...)           -- Hash Join: 1.150ms
+   JOIN ... GROUP BY ... HAVING ...   -- HashAggregate: 0.248ms
+   ```
+   Important Findings:
+   - JOIN approach is ~4.6x faster than subquery
+   - Memory usage is more efficient with JOIN
+   - Row estimation is more accurate with JOIN
+   - Fewer buffer hits in JOIN approach (10 vs 63)
+
+### Advanced Queries Analysis
+
+1. **Window Functions**
+   ```sql
+   -- Row numbers and running totals
+   ROW_NUMBER() OVER (PARTITION BY ...)     -- WindowAgg: 0.526ms
+   SUM(...) OVER (PARTITION BY ... ORDER BY) -- WindowAgg: 4.018ms
+   ```
+   Key Points:
+   - Simple window functions are fast (0.526ms)
+   - Adding ORDER BY increases complexity significantly
+   - Memory usage increases with window frame size
+   - Buffer hits scale with data size
+
+2. **Complex Aggregations**
+   ```sql
+   -- Customer statistics vs Monthly statistics
+   GROUP BY customers.id              -- GroupAggregate: 1.596ms
+   GROUP BY DATE_TRUNC('month', ...) -- GroupAggregate: 5.329ms
+   ```
+   Performance Notes:
+   - Date functions add overhead
+   - Memory usage increases with group complexity
+   - Sort operations impact performance
+   - Buffer hits remain consistent
+
+3. **Recursive CTE**
+   ```sql
+   WITH RECURSIVE order_chain AS (
+     -- Base case + Recursive case
+   )
+   ```
+   Implementation Insights:
+   - Fast execution (0.323ms) for chain analysis
+   - Efficient memory usage (40kB)
+   - Good filter pushdown
+   - Minimal buffer hits (26)
+
+4. **LATERAL JOIN**
+   ```sql
+   -- Top N per group pattern
+   CROSS JOIN LATERAL (SELECT ... LIMIT 3)
+   ```
+   Performance Considerations:
+   - Highest execution time (80.625ms)
+   - Heavy buffer usage (1734 hits)
+   - Memory efficient per iteration (25kB)
+   - Good for top-N queries despite higher execution time
+
+### Query Plan Reading Tips
+
+1. **Cost Components**
+   ```
+   (cost=0.00..2.62 rows=10 width=40)
+   |     |     |     |_ Average row width in bytes
+   |     |     |_ Estimated number of rows
+   |     |_ Total cost
+   |_ Startup cost
+   ```
+
+2. **Actual vs Estimated**
+   ```
+   (actual time=0.006..0.009 rows=10 loops=1)
+   |        |     |     |     |_ Number of iterations
+   |        |     |     |_ Actual rows returned
+   |        |     |_ Total time (ms)
+   |_ Startup time (ms)
+   ```
+
+3. **Buffer Statistics**
+   ```
+   Buffers: shared hit=2
+   |        |     |_ Number of buffer hits
+   |        |_ Buffer type (shared, local, temp)
+   ```
+
+4. **Memory Usage**
+   ```
+   Memory Usage: 24kB
+   Buckets: 1024
+   Batches: 1
+   ```
+
+### Common Performance Patterns
+
+1. **Sequential vs Index Scan**
+   - Small tables (< 1000 rows): Sequential Scan is often faster
+   - Large tables with selective conditions: Index Scan preferred
+   - Full table reads: Sequential Scan is more efficient
+
+2. **Join Strategies**
+   - Hash Join: Large tables, equality conditions
+   - Nested Loop: Small tables or very selective conditions
+   - Merge Join: Pre-sorted data or when result must be sorted
+
+3. **Aggregation Methods**
+   - HashAggregate: Faster but more memory intensive
+   - GroupAggregate: Used when sorting is required
+   - Plain Aggregate: Single group or very small groups
+
+4. **Memory Management**
+   - Small operations: Memory-based processing
+   - Large sorts: May spill to disk
+   - Hash tables: Size depends on row count and width
+
+### Performance Red Flags
+
+1. **High Buffer Hits**
+   - Normal: < 100 for simple queries
+   - Warning: > 1000 for simple operations
+   - Investigate: Repeated table scans
+
+2. **Execution Time Spikes**
+   - Simple queries: Should be < 1ms
+   - Complex joins: < 10ms
+   - Analytical queries: < 100ms
+   - Investigate if significantly higher
+
+3. **Row Estimation Errors**
+   - Good: Estimated rows within 20% of actual
+   - Warning: Order of magnitude difference
+   - Action: Update table statistics
+
+4. **Memory Usage**
+   - Normal: < 100kB for simple operations
+   - Warning: > 1MB for simple queries
+   - Monitor: Spill to disk operations
+
 ## Running the Examples
 
-1. Setup Database:
-```bash
-bundle install
-rake db:setup
-```
-
-2. Run Basic Examples:
+1. Run Basic Examples:
 ```bash
 ruby examples/03_queries/practice_queries.rb
 ```
 
-3. Run Optimization Lab:
+2. Run Optimization Lab:
 ```bash
 ruby examples/03_queries/query_optimization_lab.rb
 ```
 
-4. Run Advanced Queries:
+3. Run Advanced Queries:
 ```bash
 ruby examples/03_queries/advanced_queries.rb
 ```
@@ -522,4 +696,201 @@ ruby examples/03_queries/advanced_queries.rb
 1. [PostgreSQL Official Documentation - Using EXPLAIN](https://www.postgresql.org/docs/current/using-explain.html)
 2. [PostgreSQL Official Documentation - Performance Tips](https://www.postgresql.org/docs/current/performance-tips.html)
 3. [Understanding EXPLAIN ANALYZE Output](https://www.postgresql.org/docs/current/using-explain.html#USING-EXPLAIN-ANALYZE)
-4. [Index Types](https://www.postgresql.org/docs/current/indexes-types.html) 
+4. [Index Types](https://www.postgresql.org/docs/current/indexes-types.html)
+
+### Understanding Disk Usage in Query Plans
+
+When PostgreSQL can't fit operations in memory (controlled by `work_mem`), it spills to disk. Here's how to interpret disk usage in EXPLAIN ANALYZE output:
+
+1. **Sort Operations**
+   ```sql
+   Sort Method: quicksort  Memory: 46kB
+   -- vs --
+   Sort Method: external merge  Disk: 6360kB
+   ```
+   - `quicksort`: Operation fits in memory
+   - `external merge`: Had to use disk (slower)
+   - `Disk: NNNkB`: Amount of disk space used
+
+2. **Hash Operations**
+   ```sql
+   Buckets: 1024  Batches: 1  Memory Usage: 24kB
+   -- vs --
+   Buckets: 2048  Batches: 2  Memory Usage: 113kB
+   ```
+   - `Batches: 1`: Hash table fits in memory
+   - `Batches: > 1`: Hash table split across disk
+   - More buckets = more memory used
+
+3. **Buffer Usage Types**
+   ```sql
+   Buffers: shared hit=7 read=91
+   -- vs --
+   Buffers: shared hit=1082, temp read=3240 written=3472
+   ```
+   - `shared hit`: Found in PostgreSQL's buffer cache
+   - `shared read`: Read from disk into cache
+   - `temp read/written`: Temporary files used for disk operations
+
+4. **Memory vs Disk Performance**
+   ```sql
+   Planning Time: 0.164 ms
+   Execution Time: 1.894 ms
+   -- vs --
+   Planning Time: 0.164 ms
+   Execution Time: 108.320 ms
+   ```
+   - Memory operations: typically milliseconds
+   - Disk operations: can be 10-100x slower
+   - Watch for large differences between estimated and actual times
+
+### Common Disk Usage Patterns
+
+1. **Large Sorts**
+   ```sql
+   -- Memory-intensive sort
+   ORDER BY complex_expression
+   ```
+   Watch for:
+   - `Sort Method: external merge`
+   - High `temp read/written` values
+   - Multiple sort operations
+
+2. **Complex Aggregations**
+   ```sql
+   -- Memory-intensive aggregation
+   GROUP BY multiple_columns
+   HAVING complex_conditions
+   ```
+   Signs of disk usage:
+   - `HashAggregate` with multiple batches
+   - High `temp read/written` values
+   - Large differences between estimated and actual rows
+
+3. **String Aggregation**
+   ```sql
+   -- Memory-intensive string operation
+   STRING_AGG(column, delimiter)
+   ```
+   Indicators:
+   - Large `Memory Usage` values
+   - Multiple batches in hash operations
+   - High buffer read/write counts
+
+4. **Multiple Joins**
+   ```sql
+   -- Memory-intensive joins
+   FROM table1
+   JOIN table2 ON ...
+   JOIN table3 ON ...
+   ```
+   Look for:
+   - Multiple hash operations
+   - Increased batches per hash
+   - High temporary file usage
+
+### Optimizing Disk Usage
+
+1. **Work Memory Settings**
+   ```sql
+   -- Check current work_mem
+   SHOW work_mem;
+   
+   -- Set session work_mem
+   SET work_mem = '100MB';
+   ```
+   - Default is often too low for complex queries
+   - Increase gradually while monitoring performance
+   - Consider per-query adjustment
+
+2. **Maintenance Operations**
+   ```sql
+   -- Update table statistics
+   ANALYZE table_name;
+   
+   -- Clean up bloat
+   VACUUM table_name;
+   ```
+   - Keep statistics current
+   - Reduce table bloat
+   - Regular maintenance reduces disk usage
+
+3. **Query Optimization**
+   ```sql
+   -- Instead of
+   SELECT DISTINCT complex_expression
+   -- Consider
+   SELECT complex_expression GROUP BY columns
+   ```
+   - Minimize sorts where possible
+   - Use indexes effectively
+   - Consider materialized views for complex aggregations
+
+4. **Monitoring Disk Impact**
+   ```sql
+   -- Check temporary file usage
+   SELECT * FROM pg_stat_database;
+   ```
+   Key metrics:
+   - `temp_files`: Number of temp files created
+   - `temp_bytes`: Total bytes written to temp files
+   - `blk_read_time`: Time spent reading blocks
+   - `blk_write_time`: Time spent writing blocks
+
+### Performance Comparison Example
+
+From our practice queries, here's a real-world comparison:
+
+1. **Memory-Based Query**
+   ```sql
+   SELECT customers.country, COUNT(DISTINCT orders.id)
+   FROM orders
+   JOIN customers ON ...
+   GROUP BY customers.country
+   ```
+   Results:
+   - Execution time: 1.894 ms
+   - Buffer hits: 98 (7 hits + 91 reads)
+   - Sort method: quicksort
+   - Memory usage: 46kB
+
+2. **Disk-Based Query**
+   ```sql
+   SELECT customers.country,
+          STRING_AGG(DISTINCT customers.name, ', '),
+          DATE_TRUNC('month', orders.created_at)
+   FROM orders
+   JOIN customers ON ...
+   GROUP BY ...
+   ```
+   Results:
+   - Execution time: 108.320 ms (57x slower)
+   - Buffer operations: 7794 (1082 hits + 3240 reads + 3472 writes)
+   - Sort method: external merge
+   - Disk usage: 6360kB
+   - Temp files: read=3240 written=3472
+
+### Key Takeaways
+
+1. **Memory vs Disk Tradeoffs**
+   - Memory operations: Fast but limited
+   - Disk operations: Slower but scalable
+   - Balance based on data size and complexity
+
+2. **Warning Signs**
+   - `external merge` in sort operations
+   - Multiple batches in hash operations
+   - High temp file usage
+   - Large execution time differences
+
+3. **Optimization Strategies**
+   - Increase `work_mem` for complex queries
+   - Use appropriate indexes
+   - Minimize unnecessary sorting/grouping
+   - Consider materialized views
+
+4. **Monitoring Tips**
+   - Watch for unexpected disk operations
+   - Monitor temp file usage
+   - Compare estimated vs actual rows
+   - Track buffer hit ratios 
