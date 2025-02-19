@@ -62,12 +62,13 @@ ActiveRecord::Base.connection.instance_exec do
     chunk_time_interval: '1 day',
     compress_segmentby: 'device_id',
     compress_orderby: 'time DESC',
-    compress_after: '7 days'
+    compress_after: '7 days',
+    # drop_after: '30 days' # Optional: delete chunks after 30 days
   }
 
   create_table(:measurements, id: false, hypertable: hypertable_options) do |t|
     t.timestamptz :time, null: false
-    t.string :device_id, null: false
+    t.text :device_id, null: false
     t.float :temperature
     t.float :humidity
     t.float :battery_level
@@ -78,28 +79,61 @@ ActiveRecord::Base.connection.instance_exec do
 end
 
 # Generate sample data
-def generate_sample_data(total: 1000)
-  time = 1.month.ago
+def generate_sample_data(total: 1000, time: 1.month.ago)
   devices = ['device1', 'device2', 'device3']
+  
+  # Initialize base values for each device
+  device_states = devices.each_with_object({}) do |device, states|
+    states[device] = {
+      temperature: 25.0 + rand(-2.0..2.0),  # Start around 25°C with small variation
+      humidity: 50.0 + rand(-5.0..5.0),     # Start around 50% with small variation
+      battery_level: 100.0                   # Start with full battery
+    }
+  end
   
   total.times.map do
     time = time + rand(60).seconds
     device = devices.sample
+    current_state = device_states[device]
+    
+    # Generate new values with small variations from previous values
+    new_temp = current_state[:temperature] + rand(-0.5..0.5)  # Small temperature changes
+    new_temp = [30.0, [20.0, new_temp].max].min              # Keep between 20-30°C
+    
+    new_humidity = current_state[:humidity] + rand(-1.0..1.0) # Small humidity changes
+    new_humidity = [60.0, [40.0, new_humidity].max].min      # Keep between 40-60%
+    
+    new_battery = current_state[:battery_level] - rand(0.0..0.1) # Slow battery drain
+    new_battery = [0.0, new_battery].max                         # Don't go below 0%
+    
+    # Update device state
+    device_states[device] = {
+      temperature: new_temp,
+      humidity: new_humidity,
+      battery_level: new_battery
+    }
+    
+    # Return measurement
     {
       time: time,
       device_id: device,
-      temperature: rand(20.0..30.0),
-      humidity: rand(40.0..60.0),
-      battery_level: rand(80.0..100.0)
+      temperature: new_temp,
+      humidity: new_humidity,
+      battery_level: new_battery
     }
   end
 end
 
 # Insert sample data in batches
 puts "Generating and inserting sample data..."
-batch = generate_sample_data(total: 1000)
 ActiveRecord::Base.logger = nil # Suppress logs during bulk insert
-Measurement.insert_all(batch, returning: false)
+time = 1.month.ago
+10.times do
+  batch = generate_sample_data(total: 10_000, time: time)
+  Measurement.insert_all(batch, returning: false)
+  time = batch.last[:time] + 1.second
+  print "."
+end
 ActiveRecord::Base.logger = Logger.new(STDOUT)
 
 # Refresh aggregates and show some example queries
