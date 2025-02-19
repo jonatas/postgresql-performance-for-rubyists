@@ -1,173 +1,224 @@
-# PostgreSQL Performance Workshop
+# 🚀 Ruby PostgreSQL Performance Workshop
 
+Welcome to an interactive journey into PostgreSQL optimization for Rubyists! This self-paced workshop will take you from understanding PostgreSQL internals to mastering TimescaleDB for time-series data. Get ready to level up your database skills! 🎯
 
-This is a 3 hour workshop for ruby developers who want to understand how to optimize their queries and use TimescaleDB.
+## 🎮 How to Use This Workshop
 
-The workshop is split into 4 phases:
+This is not your typical read-only tutorial. It's a hands-on laboratory where you'll:
 
-1. PostgreSQL Internals (55 minutes)
-2. Transaction Management (55 minutes)
-3. Query Optimization (55 minutes)
-4. TimescaleDB Extension (55 minutes)
+1. 🔬 **Experiment**: Each section has interactive examples you can run and modify
+2. 🛠 **Break Things**: Create your own scenarios and see what happens
+3. 🤔 **Question Everything**: Challenge the examples and try different approaches
+4. 🎨 **Be Creative**: There's no single "right" way to optimize
 
-## 1: PostgreSQL Internals (55 minutes)
-**Objective**: Understand PostgreSQL's physical storage and system catalogs
+### Workshop Structure
 
-**Schedule**:
-- Theoretical introduction to storage concepts (15 mins)
-- Code walkthrough of storage analysis tools (15 mins)
-- Hands-on storage exploration exercise (20 mins)
-- Q&A and troubleshooting (5 mins)
+```mermaid
+graph TD
+    A[PostgreSQL Internals] -->|Understanding Storage| B[Transaction Management]
+    B -->|Concurrency Control| C[Query Optimization]
+    C -->|Performance Tuning| D[TimescaleDB Extension]
+    
+    A -->|Storage Layout| E[TOAST & WAL]
+    B -->|Isolation Levels| F[Deadlock Handling]
+    C -->|Query Planning| G[Index Usage]
+    D -->|Time Series| H[Compression & Aggregation]
+```
 
-### Setup File: `01_storage_explorer.rb`
+## 🎯 Prerequisites
+
 ```ruby
-require 'bundler/inline'
+knowledge = {
+  ruby: "Comfortable with Ruby and ActiveRecord",
+  postgres: "Basic SQL knowledge",
+  tools: ["psql", "ruby 3.0+", "postgres 15+"]
+}
 
-gemfile(true) do
-  source 'https://rubygems.org'
-  gem 'pg'
-  gem 'activerecord'
-  gem 'pry'
-end
+raise "Need to level up first! 💪" unless knowledge.values.all?(&:present?)
+```
 
-ActiveRecord::Base.establish_connection(ENV['DATABASE_URL'])
+## 🛠 Setup
 
+1. Clone this repository:
+```bash
+  git clone https://github.com/timescale/postgresql-performance-for-rubyists
+cd postgresql-performance-for-rubyists
+```
+
+2. Set up your database:
+```ruby
+# In your terminal
+export DATABASE_URL="postgres://user:pass@localhost:5432/workshop_db"
+```
+
+3. Verify your setup:
+```ruby
+ruby examples/01_storage/practice_storage.rb
+# If you see table creation outputs, you're good to go! 🎉
+```
+
+## 📚 Learning Path
+
+### 1. [PostgreSQL Internals](examples/01_storage/README.md)
+Dive into how PostgreSQL physically stores your data.
+
+```ruby
 class StorageExplorer
-  def self.analyze_table_storage(table_name)
-    connection.execute(<<~SQL)
-      SELECT pg_size_pretty(pg_total_relation_size('#{table_name}')),
-             pg_size_pretty(pg_relation_size('#{table_name}')),
-             pg_size_pretty(pg_indexes_size('#{table_name}'))
-    SQL
-  end
-
-  def self.analyze_toast_storage(table_name)
-    connection.execute(<<~SQL)
-      SELECT pg_size_pretty(pg_total_relation_size(reltoastrelid))
-      FROM pg_class
-      WHERE relname = '#{table_name}'
-      AND reltoastrelid != 0
-    SQL
+  def self.why_important?
+    [
+      "Understand TOAST for large values",
+      "Optimize table layout",
+      "Master WAL mechanics",
+      "Improve write performance"
+    ]
   end
 end
 ```
 
-### Exercise File: `01_practice_storage.rb`
-```ruby
-# Create tables with different characteristics
-create_table :documents do |t|
-  t.string :title
-  t.text :content    # Regular text
-  t.jsonb :metadata  # JSONB storage
-  t.binary :attachment  # TOAST candidate
-end
+### 2. [Transaction Management](examples/02_transactions/README.md)
+Master concurrency control and transaction isolation.
 
-# Insert sample data with varying sizes
-Document.create!(
-  title: "Large Document",
-  content: "A" * 10000,  # Force TOAST storage
-  metadata: { tags: ["large", "test"] },
-  attachment: File.read("sample.pdf")
-)
+```ruby
+Transaction.isolation_levels.each do |level|
+  puts "Learn how #{level} affects your app! 🔒"
+end
 ```
 
-## 2: Transaction Management (55 minutes)
-**Objective**: Master transaction isolation levels and deadlock handling
-
-### Setup File: `02_transaction_lab.rb`
+### 3. [Query Optimization](examples/03_queries/README.md)
+Turn slow queries into speed demons! 🏎️
 
 ```ruby
-require 'bundler/inline'
-
-gemfile(true) do
-  source 'https://rubygems.org'
-  gem 'pg'
-  gem 'activerecord'
-  gem 'pry'
-end
-
-class TransactionLab
-  def self.simulate_deadlock
-    Thread.new do
-      Account.transaction do
-        account1.lock!
-        sleep(1) # Force deadlock
-        account2.update!(balance: 100)
-      end
-    end
-
-    Account.transaction do
-      account2.lock!
-      account1.update!(balance: 200)
-    end
+class QueryOptimizer
+  def self.topics
+    {
+      explain: "Read query plans like a pro",
+      indexes: "Choose the right index types",
+      joins: "Master join strategies",
+      aggregations: "Optimize group operations"
+    }
   end
 end
 ```
 
-### Exercise File: `02_practice_transactions.rb`
+### 4. [TimescaleDB Extension](examples/04_timescale/README.md)
+Level up your time-series data management!
 
 ```ruby
-# Test different isolation levels
-Account.transaction(isolation: :repeatable_read) do
-  account = Account.find(1)
-  initial_balance = account.balance
+class TimescaleDB
+  def self.superpowers
+    [
+      "Automatic partitioning",
+      "Blazing-fast queries",
+      "Smart compression",
+      "Continuous aggregates"
+    ]
+  end
+end
+```
+
+## 🎓 Learning Flow
+
+```mermaid
+graph LR
+    A[Read Section] -->|Run Examples| B[Experiment]
+    B -->|Modify Code| C[Break Things]
+    C -->|Fix Issues| D[Learn]
+    D -->|Next Section| A
+```
+
+## 🎯 Workshop Goals
+
+By the end of this workshop, you'll be able to:
+
+1. **Understand PostgreSQL's Soul**
+   - How data is physically stored
+   - WAL and TOAST mechanisms
+   - Transaction isolation in action
+
+2. **Master Query Performance**
+   - Read and understand EXPLAIN output
+   - Choose optimal indexes
+   - Write efficient queries
+
+3. **Handle Time-Series Data**
+   - Use TimescaleDB effectively
+   - Implement compression strategies
+   - Create continuous aggregates
+
+## 🎮 Interactive Learning Tips
+
+1. **Experiment Freely**
+```ruby
+def learning_approach
+  loop do
+    try_something_new
+    break if it_works?
+    learn_from_failure
+  end
+end
+```
+
+2. **Break Things Purposefully**
+```ruby
+def controlled_chaos
+  begin
+    push_the_limits
+  rescue PostgreSQL::Error => e
+    understand_why_it_failed(e)
+  end
+end
+```
+
+3. **Build Your Own Examples**
+```ruby
+class YourAwesomeExample < Workshop
+  def initialize
+    super
+    @creativity = MAX_LEVEL
+  end
+end
+```
+
+## 🤝 Contributing
+
+Found a bug? Have an improvement idea? Want to add more examples? We love contributions!
+
+```ruby
+module Contributor
+  extend Enthusiasm
   
-  # Concurrent modification in another session
-  Account.find(1).update!(balance: 500)
-  
-  # Check if we see the change
-  account.reload
-  puts "Balance changed? #{account.balance != initial_balance}"
-end
-```
-
-## 3: Query Optimization (55 minutes)
-**Objective**: Master query planning and execution
-
-**Schedule**:
-- Theoretical introduction to query planning (15 mins)
-- Code walkthrough of EXPLAIN and optimization techniques (15 mins)
-- Hands-on query optimization exercise (20 mins)
-- Q&A and troubleshooting (5 mins)
-
-### Setup File: `03_query_explorer.rb`
-```ruby
-class QueryExplorer
-  def self.analyze_query(sql)
-    connection.execute(<<~SQL)
-      EXPLAIN (ANALYZE, BUFFERS)
-      #{sql}
-    SQL
+  def self.how_to_help
+    [
+      "🐛 Report bugs",
+      "✨ Add new examples",
+      "📚 Improve documentation",
+      "🎨 Share your creative solutions"
+    ]
   end
 end
+```
 
-class Order < ApplicationRecord
-  belongs_to :customer
-  has_many :line_items
+## 📖 Additional Resources
+
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [TimescaleDB Documentation](https://docs.timescale.com/)
+- [Ruby on Rails Active Record Query Interface](https://guides.rubyonrails.org/active_record_querying.html)
+
+## 🎉 Ready to Begin?
+
+Start with the [PostgreSQL Internals](examples/01_storage/README.md) section and work your way through each module at your own pace. Remember:
+
+```ruby
+module WorkshopPhilosophy
+  def self.key_points
+    [
+      "There are no stupid questions",
+      "Breaking things is learning",
+      "Share your discoveries",
+      "Have fun while learning!"
+    ]
+  end
 end
 ```
 
-### Exercise File: `03_practice_queries.rb`
-```ruby
-# Complex query for optimization
-orders = Order.joins(:line_items, :customer)
-  .where(created_at: 1.month.ago..Time.current)
-  .group('customers.country')
-  .select('customers.country,
-          COUNT(DISTINCT orders.id) as order_count,
-          SUM(line_items.quantity * line_items.price) as revenue')
-
-puts QueryExplorer.analyze_query(orders.to_sql)
-```
-
-## 4: TimescaleDB Integration (55 minutes)
-**Objective**: Implement time-series data management with TimescaleDB
-
-**Schedule**:
-- Theoretical introduction to TimescaleDB concepts (15 mins)
-- Code walkthrough of TimescaleDB features (15 mins)
-- Hands-on TimescaleDB implementation exercise (20 mins)
-- Q&A and troubleshooting (5 mins)
-
-### Setup File: `04_timescale_setup.rb`
-```
+Happy learning! 🚀✨
