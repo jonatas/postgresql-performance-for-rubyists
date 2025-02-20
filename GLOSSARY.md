@@ -212,12 +212,14 @@ A TimescaleDB feature that automatically maintains materialized views of aggrega
 **Creation Example**:
 ```ruby
 # In your model
-class Measurement < ApplicationRecord
-  acts_as_hypertable time_column: 'time'
+class Deal < ApplicationRecord
+  acts_as_hypertable time_column: 'time', segment_by: 'region'
+
+  scope :avg_price, -> { avg(:price) }
 
   # Define continuous aggregates
   continuous_aggregates(
-    scopes: [:avg_temperature],
+    scopes: [:avg_price],
     timeframes: [:hour, :day],
     refresh_policy: {
       hour: {
@@ -233,18 +235,27 @@ end
 **SQL Equivalent**:
 ```sql
 -- Create continuous aggregate
-CREATE MATERIALIZED VIEW measurement_daily
+CREATE MATERIALIZED VIEW deal_avg_price_by_hour
 WITH (timescaledb.continuous) AS
-SELECT time_bucket('1 day', time) as bucket,
-       avg(temperature) as avg_temp
-FROM measurements
-GROUP BY bucket;
+SELECT time_bucket('1 hour', time) as bucket,
+       region,
+       avg(price) as avg_price
+FROM deals
+GROUP BY bucket, region;
 
 -- Set refresh policy
-SELECT add_continuous_aggregate_policy('measurement_daily',
-  start_offset => INTERVAL '3 days',
+SELECT add_continuous_aggregate_policy('deal_avg_price_by_hour',
+  start_offset => INTERVAL '3 hours',
   end_offset => INTERVAL '1 hour',
   schedule_interval => INTERVAL '1 hour');
+
+CREATE MATERIALIZED VIEW deal_avg_price_by_day
+WITH (timescaledb.continuous) AS
+SELECT time_bucket('1 day', time) as bucket,
+       region,
+       avg(price) as avg_price
+FROM deal_avg_price_by_hour
+GROUP BY bucket, region;
 ```
 
 **When to use**:
