@@ -271,24 +271,6 @@ users.each { |u| User.create!(u) }
 User.insert_all!(users)
 ```
 
-## 🤝 Contributing
-
-Found a bug? Have an improvement idea? Want to add more examples? We love contributions!
-
-```ruby
-module Contributor
-  extend Enthusiasm
-  
-  def self.how_to_help
-    [
-      "🐛 Report bugs",
-      "✨ Add new examples",
-      "📚 Improve documentation",
-      "🎨 Share your creative solutions"
-    ]
-  end
-end
-```
 
 ## 📖 Additional Resources
 
@@ -515,27 +497,71 @@ class Order < ApplicationRecord
 end
 ```
 
-### 3. Real-time Analytics Dashboard
+## 📊 Real-time Analytics with TimescaleDB
 
 ```ruby
-# Challenge: Fast aggregations over large datasets
-class Analytics
-  # Use TimescaleDB continuous aggregates
-  def self.hourly_metrics
-    Metric.select(
-      "time_bucket('1 hour', created_at) as hour",
-      'count(*) as total',
-      'avg(value) as avg_value'
-    ).group('hour').order('hour DESC')
-  end
-  
-  # Use materialized views for complex calculations
-  def self.user_engagement_stats
-    ActiveRecord::Base.connection.execute("""
-      REFRESH MATERIALIZED VIEW CONCURRENTLY user_engagement_stats
-    """)
-  end
-end
+# Issue: TOAST values not visible in regular queries
+# Solution: Use the following to see TOAST-ed values:
+ActiveRecord::Base.connection.execute("""
+  SELECT *, pg_column_size(large_field) as field_size
+  FROM my_table WHERE id = 1
+""").first
+```
+TimescaleDB extends PostgreSQL with powerful time-series capabilities. Here's how to implement efficient real-time analytics:
+
+### 1. Setting Up Time-Series Tables
+
+ ```ruby
+class Measurement < ActiveRecord::Base
+  extend Timescaledb::ActsAsHypertable
+
+  acts_as_hypertable time_column: 'time',
+    segment_by: 'device_id',
+    value_column: 'temperature',
+    chunk_time_interval: '1 day'
+
+  scope :avg_temperature, -> { select('device_id, avg(temperature) as temperature').group('device_id') }
+  scope :avg_humidity, -> { select('device_id, avg(humidity) as humidity').group('device_id') }
+  scope :battery_stats, -> { select('device_id, min(battery_level) as min_battery, avg(battery_level) as battery_level').group('device_id') }
+ end
+ ```
+
+### 2. Continuous Aggregates for Real-time Analytics
+
+You can use the `continuous_aggregates` helper to create continuous aggregates hierarchies using declared scopes.
+
+ ```ruby
+continuous_aggregates scopes: [:avg_temperature, :avg_humidity, :battery_stats],
+  timeframes: [:hour, :day],
+  refresh_policy: {
+    hour: {
+      start_offset: '3 hours',
+      end_offset: '1 hour',
+      schedule_interval: '1 hour'
+    },
+    day: {
+      start_offset: '3 days',
+      end_offset: '1 day',
+      schedule_interval: '1 day'
+    }
+}
+```
+
+### 3. Query data for the Real-time Analytics Dashboard
+
+Query from raw data and mix scopes to filter out the data you need:
+
+```ruby
+Measurement.today.avg_temperature # average temperature per device
+Measurement.last_hour.avg_humidity # average humidity per device
+Measurement.last_minute.battery_stats # min and avg battery level per device
+```
+
+Using the macro in the model, you can query the continuous aggregate directly from generated class:
+
+```ruby
+Measurement::AvgTemperatureByHour.today.all
+Measurement::AvgTemperatureByDay.last_week.all
 ```
 
 ### 4. Multi-tenant SaaS Application
@@ -581,31 +607,6 @@ class BatchProcessor
   end
 end
 ```
-
-## 🤝 Contributing
-
-Found a bug? Have an improvement idea? Want to add more examples? We love contributions!
-
-```ruby
-module Contributor
-  extend Enthusiasm
-  
-  def self.how_to_help
-    [
-      "🐛 Report bugs",
-      "✨ Add new examples",
-      "📚 Improve documentation",
-      "🎨 Share your creative solutions"
-    ]
-  end
-end
-```
-
-## 📖 Additional Resources
-
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [TimescaleDB Documentation](https://docs.timescale.com/)
-- [Ruby on Rails Active Record Query Interface](https://guides.rubyonrails.org/active_record_querying.html)
 
 ## 🎉 Ready to Begin?
 
@@ -778,3 +779,28 @@ If you're interested in running this workshop for your conference or meetup, ple
 Begin your journey with [Chapter 1: PostgreSQL Internals](examples/01_storage/README.md) to build a solid foundation in database storage concepts. Each chapter builds upon the knowledge from previous ones, so it's recommended to follow them in order.
 
 Happy learning! 🎯
+
+## 🤝 Contributing
+
+Found a bug? Have an improvement idea? Want to add more examples? We love contributions!
+
+```ruby
+module Contributor
+  extend Enthusiasm
+  
+  def self.how_to_help
+    [
+      "🐛 Report bugs",
+      "✨ Add new examples",
+      "📚 Improve documentation",
+      "🎨 Share your creative solutions"
+    ]
+  end
+end
+```
+
+## 📖 Additional Resources
+
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [TimescaleDB Documentation](https://docs.timescale.com/)
+- [Ruby on Rails Active Record Query Interface](https://guides.rubyonrails.org/active_record_querying.html)
