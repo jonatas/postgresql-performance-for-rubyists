@@ -704,15 +704,15 @@ end
 User.where("name LIKE ?", "%john%")
 ```
 
-### TimescaleDB Issues
+### TimescaleDB tips
+
+Avoid inserting data in unsorted batches, as it will create a new chunk dynamically. Instead, sort the data by time first. Grouping by time will create a new chunk for each batch, and two processes will compete to create new chunks, locking the table.
 
 ```ruby
 # Issue: Slow inserts with many chunks
 # Solution: Use bulk inserts with appropriate time batching
-Metric.insert_all!(
-  metrics_data.group_by { |m| m[:time].beginning_of_hour }
-    .map { |_, batch| batch }
-)
+metrics_data.group_by { |m| m[:time].beginning_of_hour }
+  .map { |_, batch| Metric.insert_all!( batch ) }
 ```
 
 ## ORM Comparison (ActiveRecord vs Sequel)
@@ -744,6 +744,8 @@ This example demonstrates performance differences between ActiveRecord and Seque
    - ActiveRecord: 124.6 i/s
 
 ## 🔍 Performance Comparison Tables
+
+Here's a table with the performance comparison between ActiveRecord and Sequel based on the experiments proposed in the [ORM Comparison](examples/01_storage/README.md) section.
 
 ### Query Types Performance (ops/sec)
 
