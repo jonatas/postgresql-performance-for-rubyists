@@ -222,3 +222,47 @@ end
 ```
 
 Happy learning! 🚀✨
+
+## ORM Comparison (ActiveRecord vs Sequel)
+
+This example demonstrates performance differences between ActiveRecord and Sequel across various operations:
+
+1. **Simple Query Performance**
+   - Sequel's `where` clause is dramatically faster (10,178.6 i/s vs 82.6 i/s)
+   - For simple `all` queries, both ORMs perform similarly
+
+2. **Complex Join Performance**
+   - Sequel outperforms ActiveRecord by 3.25x for complex joins
+   - Sequel: 93.3 i/s
+   - ActiveRecord: 28.7 i/s
+
+3. **Aggregation Performance**
+   - ActiveRecord performs better for aggregations (1.34x faster)
+   - ActiveRecord: 220.2 i/s
+   - Sequel: 164.0 i/s
+
+4. **Bulk Operation Performance**
+   - Sequel is 1.26x faster for bulk inserts
+   - Sequel: 272.6 i/s
+   - ActiveRecord: 215.7 i/s
+
+5. **Query Building Performance**
+   - Sequel's method chaining is 1.30x faster
+   - Sequel: 162.2 i/s
+   - ActiveRecord: 124.6 i/s
+
+### Key Findings
+
+1. Sequel generally performs better for raw SQL operations and complex queries
+2. ActiveRecord provides better Ruby-like syntax and Rails integration
+3. Complex joins show significant performance differences in favor of Sequel
+4. Bulk operations benefit from specialized methods in both ORMs
+5. Query building overhead varies between ORMs, with Sequel having a slight advantage
+
+### Recommendations
+
+1. Use Sequel for performance-critical, data-intensive operations
+2. Stick with ActiveRecord for standard CRUD and Rails integration
+3. Consider using both in the same application where appropriate
+4. Profile your specific use case before choosing an ORM
+5. Use bulk operations whenever possible for better performance
