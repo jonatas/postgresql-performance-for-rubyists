@@ -1,6 +1,13 @@
 # PostgreSQL Storage Deep Dive
 
-This module provides a practical exploration of PostgreSQL's storage mechanisms, progressing from basic concepts to advanced optimization techniques.
+This module provides a practical exploration of PostgreSQL's storage mechanisms, progressing from basic concepts to advanced optimization techniques. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
+
+## Prerequisites
+
+Before starting this module, ensure you understand:
+- [ACID Properties](../../GLOSSARY.md#acid)
+- [WAL (Write-Ahead Log)](../../GLOSSARY.md#wal)
+- [TOAST](../../GLOSSARY.md#toast)
 
 ## Learning Path
 
@@ -27,6 +34,12 @@ This module provides a practical exploration of PostgreSQL's storage mechanisms,
    - Transaction impacts
    - Checkpoint behavior
    - Performance optimization
+
+## Related Concepts
+
+- [Query Planning](../03_queries/README.md#query-planning)
+- [Transaction Management](../02_transactions/README.md#transaction-management)
+- [Buffer Management](../../GLOSSARY.md#buffer-management)
 
 ## Database Structure
 
@@ -57,6 +70,53 @@ In this module, you'll explore:
 You can run the examples by running `bundle exec ruby examples/01_storage/practice_storage.rb`
 and `bundle exec ruby examples/01_storage/practice_tuple.rb`.
 
+## PostgreSQL Storage Layout
+
+### 1. Basic Page Layout (8KB)
+Every PostgreSQL table is stored as an array of 8KB pages. Here's a simplified view of how a single page is organized:
+
+```ascii
++--------------------------------+ 0
+|           Page Header          |
+|             (24B)              |
++--------------------------------+ 24
+|         Item Pointers          |
+| (4B each, points to row data) |
++--------------------------------+ varies
+|                                |
+|          Free Space            |
+|     (available for growth)     |
+|                                |
++--------------------------------+ varies
+|    Row 1 Data                  |
+|    - Header (23B)             |
+|    - Null bitmap              |
+|    - User data                |
+|    - Alignment padding        |
++--------------------------------+
+|    Row 2 Data                  |
+|    - Header (23B)             |
+|    - Null bitmap              |
+|    - User data                |
+|    - Alignment padding        |
++--------------------------------+
+|           More Rows...         |
++--------------------------------+
+|    Special Space (optional)    |
+|    (index data, etc.)         |
++--------------------------------+ 8192
+```
+
+For more details on specific concepts, see:
+- [Heap](../../GLOSSARY.md#heap)
+- [MVCC](../../GLOSSARY.md#mvcc)
+- [VACUUM](../../GLOSSARY.md#vacuum)
+
+## Next Steps
+
+After completing this module, proceed to:
+1. [Transaction Management](../02_transactions/README.md) to learn how PostgreSQL handles concurrent access
+2. [Query Optimization](../03_queries/README.md) to understand how storage affects query performance
 
 ## PostgreSQL Storage Layout
 

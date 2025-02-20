@@ -1,6 +1,20 @@
 # PostgreSQL Query Optimization Workshop
 
-This section focuses on understanding and optimizing PostgreSQL queries through practical examples and real-world scenarios.
+This section focuses on understanding and optimizing PostgreSQL queries through practical examples and real-world scenarios. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
+
+## Prerequisites
+
+Before starting this module, ensure you understand:
+- [Query Plan](../../GLOSSARY.md#query-plan)
+- [Index](../../GLOSSARY.md#index)
+- [Statistics](../../GLOSSARY.md#statistics)
+- [Transaction Management](../02_transactions/README.md#transaction-management)
+
+## Related Concepts
+
+- [MVCC](../../GLOSSARY.md#mvcc)
+- [Buffer Management](../../GLOSSARY.md#buffer-management)
+- [Storage Layout](../01_storage/README.md#storage-layout)
 
 ## Workshop Files
 
@@ -23,7 +37,7 @@ This workshop consists of the following files:
 
 4. [`advanced_queries.rb`](advanced_queries.rb)
    - Complex query patterns
-   - Window functions
+   - [Window Functions](../../GLOSSARY.md#window-function)
    - Recursive CTEs
    - LATERAL joins
 
@@ -31,7 +45,7 @@ This workshop consists of the following files:
 
 ### 1. Understanding Basic Concepts
 Start with [`query_explorer.rb`](query_explorer.rb) to understand:
-- How EXPLAIN ANALYZE works
+- How [EXPLAIN](../../GLOSSARY.md#explain) works
 - Reading execution plans
 - Understanding query costs
 - Buffer and timing statistics
@@ -51,8 +65,8 @@ Work through [`practice_queries.rb`](practice_queries.rb):
 ### 3. Structured Optimization Exercises
 Complete the exercises in [`query_optimization_lab.rb`](query_optimization_lab.rb):
 1. Basic query analysis
-2. JOIN optimization
-3. Aggregation optimization
+2. [JOIN](../../GLOSSARY.md#join) optimization
+3. [Aggregate Functions](../../GLOSSARY.md#aggregate-functions) optimization
 4. Subquery optimization
    ```bash
    ruby examples/03_queries/query_optimization_lab.rb
@@ -118,42 +132,6 @@ WITH RECURSIVE order_chain AS (
 )
 ```
 
-## Workshop Exercises
-
-### Exercise 1: Query Analysis
-Use [`query_explorer.rb`](query_explorer.rb) to analyze:
-1. Basic SELECT queries
-2. Different WHERE conditions
-3. Impact of indexes
-4. Join performance
-
-### Exercise 2: Memory vs Disk
-In [`practice_queries.rb`](practice_queries.rb):
-1. Run the basic example
-2. Note the performance metrics
-3. Run the disk usage example
-4. Compare the execution plans
-5. Observe:
-   - Sort methods (quicksort vs external merge)
-   - Buffer usage (shared hits vs temp files)
-   - Execution times
-   - Memory usage patterns
-
-### Exercise 3: Optimization Lab
-Follow [`query_optimization_lab.rb`](query_optimization_lab.rb):
-1. Analyze each query variation
-2. Compare performance metrics
-3. Identify optimization opportunities
-4. Apply improvements
-5. Verify results
-
-### Exercise 4: Advanced Patterns
-Work through [`advanced_queries.rb`](advanced_queries.rb):
-1. Understand window functions
-2. Practice recursive queries
-3. Implement LATERAL joins
-4. Optimize complex aggregations
-
 ## Performance Monitoring
 
 ### Using query_explorer.rb
@@ -166,108 +144,15 @@ Key metrics to watch:
 3. Sort methods and memory usage
 4. Row estimation accuracy
 
-### Memory vs Disk Usage
-Monitor in practice_queries.rb:
-1. Buffer statistics
-   ```
-   Buffers: shared hit=7 read=91
-   vs
-   Buffers: shared hit=1082, temp read=3240 written=3472
-   ```
-
-2. Sort operations
-   ```
-   Sort Method: quicksort  Memory: 46kB
-   vs
-   Sort Method: external merge  Disk: 6360kB
-   ```
-
-3. Hash operations
-   ```
-   Buckets: 1024  Batches: 1
-   vs
-   Buckets: 2048  Batches: 2
-   ```
-
-## Optimization Guidelines
-
-### 1. Query Structure
-- Start with simpler queries
-- Add complexity gradually
-- Monitor performance impact
-- Use appropriate indexes
-
-### 2. Memory Management
-- Set appropriate work_mem
-- Monitor temp file usage
-- Watch for disk spills
-- Use EXPLAIN ANALYZE
-
-### 3. Join Optimization
-- Choose appropriate join types
-- Order tables effectively
-- Use indexes on join columns
-- Monitor hash/sort operations
-
-### 4. Advanced Features
-- Use window functions appropriately
-- Implement CTEs efficiently
-- Optimize string operations
-- Monitor complex aggregations
-
-## Troubleshooting Guide
-
-### Common Issues
-
-1. **Slow Queries**
-   - Check execution plan
-   - Verify index usage
-   - Monitor sort operations
-   - Analyze join methods
-
-2. **Memory Issues**
-   - Review work_mem setting
-   - Check for disk spills
-   - Monitor temp file usage
-   - Optimize memory-intensive operations
-
-3. **Poor Estimates**
-   - Update table statistics
-   - Check join conditions
-   - Verify WHERE clauses
-   - Monitor actual vs estimated rows
-
-4. **Disk Operations**
-   - Identify spill causes
-   - Optimize memory usage
-   - Review sort operations
-   - Monitor buffer statistics
+For more details on monitoring, see:
+- [EXPLAIN ANALYZE](../../GLOSSARY.md#explain-analyze)
+- [Statistics](../../GLOSSARY.md#statistics)
 
 ## Next Steps
 
-1. Experiment with different:
-   - Query patterns
-   - Data volumes
-   - Memory settings
-   - Join strategies
-
-2. Practice optimizing:
-   - Complex queries
-   - Memory usage
-   - Disk operations
-   - Performance monitoring
-
-3. Explore advanced features:
-   - Window functions
-   - Recursive queries
-   - Complex aggregations
-   - LATERAL joins
-
-4. Learn to:
-   - Read execution plans
-   - Identify bottlenecks
-   - Apply optimizations
-   - Monitor performance
+After completing this module, proceed to:
+1. [TimescaleDB Extension](../04_timescale/README.md) to learn about time-series optimization
+2. [Ruby Performance](../05_ruby/README.md) to understand Ruby-specific optimizations
 
 ## Basic PostgreSQL Concepts
 

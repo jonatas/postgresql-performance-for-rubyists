@@ -2,27 +2,24 @@
 
 Welcome to an interactive journey into PostgreSQL optimization for Rubyists! This self-paced workshop will take you from understanding PostgreSQL internals to mastering TimescaleDB for time-series data. Get ready to level up your database skills! 🎯
 
-## 🎮 How to Use This Workshop
+## 📚 Workshop Structure
 
-This is not your typical read-only tutorial. It's a hands-on laboratory where you'll:
-
-1. 🔬 **Experiment**: Each section has interactive examples you can run and modify
-2. 🛠 **Break Things**: Create your own scenarios and see what happens
-3. 🤔 **Question Everything**: Challenge the examples and try different approaches
-4. 🎨 **Be Creative**: There's no single "right" way to optimize
-
-### Workshop Structure
+This workshop is organized into progressive modules, each building upon the previous ones:
 
 ```mermaid
 graph TD
-    A[PostgreSQL Internals] -->|Understanding Storage| B[Transaction Management]
-    B -->|Concurrency Control| C[Query Optimization]
-    C -->|Performance Tuning| D[TimescaleDB Extension]
+    A[Fundamentals] -->|Core Concepts| B[Storage & Internals]
+    B -->|Understanding Storage| C[Transaction Management]
+    C -->|Concurrency Control| D[Query Optimization]
+    D -->|Performance Tuning| E[TimescaleDB Extension]
+    E -->|Time Series| F[Ruby Performance]
     
-    A -->|Storage Layout| E[TOAST & WAL]
-    B -->|Isolation Levels| F[Deadlock Handling]
-    C -->|Query Planning| G[Index Usage]
-    D -->|Time Series| H[Compression & Aggregation]
+    A -->|"See: GLOSSARY.md"| G[Common Terms]
+    B -->|"See: 01_storage/README.md"| H[TOAST & WAL]
+    C -->|"See: 02_transactions/README.md"| I[Isolation Levels]
+    D -->|"See: 03_queries/README.md"| J[Query Planning]
+    E -->|"See: 04_timescale/README.md"| K[Hypertables]
+    F -->|"See: 05_ruby/README.md"| L[Ruby Optimizations]
 ```
 
 ## 🎯 Prerequisites
@@ -41,7 +38,7 @@ raise "Need to level up first! 💪" unless knowledge.values.all?(&:present?)
 
 1. Clone this repository:
 ```bash
-  git clone https://github.com/timescale/postgresql-performance-for-rubyists
+git clone https://github.com/timescale/postgresql-performance-for-rubyists
 cd postgresql-performance-for-rubyists
 ```
 
@@ -57,101 +54,63 @@ ruby examples/01_storage/practice_storage.rb
 # If you see table creation outputs, you're good to go! 🎉
 ```
 
+## 📖 Core Concepts
+
+Before diving into specific modules, familiarize yourself with these fundamental concepts:
+
+### 1. PostgreSQL Architecture
+- **[Process & Memory Structure](examples/01_storage/README.md#process-structure)**
+- **[Storage Layout](examples/01_storage/README.md#storage-layout)**
+- **[Buffer Management](examples/01_storage/README.md#buffer-management)**
+
+### 2. Data Consistency
+- **[Transaction Management](examples/02_transactions/README.md#transaction-management)**
+- **[Concurrency Control](examples/02_transactions/README.md#concurrency-control)**
+- **[ACID Properties](GLOSSARY.md#acid)**
+
+### 3. Performance Foundations
+- **[Query Planning](examples/03_queries/README.md#query-planning)**
+- **[Index Types](examples/03_queries/README.md#index-types)**
+- **[Statistics Collection](examples/03_queries/README.md#statistics)**
+
+For detailed definitions of terms used throughout the workshop, refer to our [Glossary](GLOSSARY.md).
+
 ## 📚 Learning Path
 
 ### 1. [PostgreSQL Internals](examples/01_storage/README.md)
-Dive into how PostgreSQL physically stores your data. As a Ruby developer, you'll learn how PostgreSQL's storage differs from Ruby objects in memory, and how this impacts your ActiveRecord models.
-
-```ruby
-class StorageExplorer
-  def self.why_important?
-    [
-      "Understand TOAST for large values",
-      "Optimize table layout",
-      "Master WAL mechanics",
-      "Improve write performance"
-    ]
-  end
-end
-```
-
-> **Ruby Developer Context**: While Ruby handles memory management automatically, PostgreSQL needs to manage disk storage efficiently. Understanding this helps you make better decisions about data types and model structure.
+Learn how PostgreSQL physically stores and manages data:
+- Storage layout and TOAST
+- WAL mechanics
+- Buffer management
+- Table structure optimization
 
 ### 2. [Transaction Management](examples/02_transactions/README.md)
-Master concurrency control and transaction isolation. This section bridges the gap between Ruby's single-threaded nature and PostgreSQL's multi-user concurrent environment.
-
-```ruby
-Transaction.isolation_levels.each do |level|
-  puts "Learn how #{level} affects your app! 🔒"
-end
-```
-
-> **Ruby Developer Context**: Unlike Ruby's GIL (Global Interpreter Lock), PostgreSQL handles multiple concurrent users. Understanding transaction isolation helps prevent race conditions in your web applications.
+Master concurrency control and transaction isolation:
+- ACID properties in practice
+- Isolation levels
+- Deadlock handling
+- Transaction patterns
 
 ### 3. [Query Optimization](examples/03_queries/README.md)
-Learn how ActiveRecord queries translate to PostgreSQL operations and optimize them effectively.
-
-```ruby
-class QueryOptimizer
-  def self.topics
-    {
-      explain: "Read query plans like a pro",
-      indexes: "Choose the right index types",
-      joins: "Master join strategies",
-      aggregations: "Optimize group operations"
-    }
-  end
-end
-```
-
-> **Ruby Developer Context**: While ActiveRecord provides a beautiful abstraction, understanding the underlying PostgreSQL query planner helps you write more efficient Ruby code.
+Optimize query performance:
+- Query planning and execution
+- Index selection and usage
+- Join optimization
+- Performance monitoring
 
 ### 4. [TimescaleDB Extension](examples/04_timescale/README.md)
-Level up your time-series data management! Perfect for Ruby applications dealing with metrics, logs, or IoT data.
+Handle time-series data efficiently:
+- Hypertables and chunks
+- Continuous aggregates
+- Data retention policies
+- Compression strategies
 
-```ruby
-class TimescaleDB
-  def self.superpowers
-    [
-      "Automatic partitioning",
-      "Blazing-fast queries",
-      "Smart compression",
-      "Continuous aggregates"
-    ]
-  end
-end
-```
-
-> **Ruby Developer Context**: TimescaleDB seamlessly integrates with ActiveRecord while providing powerful time-series capabilities that would be complex to implement in pure Ruby.
-
-## 🎓 Learning Flow
-
-```mermaid
-graph LR
-    A[Read Section] -->|Run Examples| B[Experiment]
-    B -->|Modify Code| C[Break Things]
-    C -->|Fix Issues| D[Learn]
-    D -->|Next Section| A
-```
-
-## 🎯 Workshop Goals
-
-By the end of this workshop, you'll be able to:
-
-1. **Understand PostgreSQL's Soul**
-   - How data is physically stored
-   - WAL and TOAST mechanisms
-   - Transaction isolation in action
-
-2. **Master Query Performance**
-   - Read and understand EXPLAIN output
-   - Choose optimal indexes
-   - Write efficient queries
-
-3. **Handle Time-Series Data**
-   - Use TimescaleDB effectively
-   - Implement compression strategies
-   - Create continuous aggregates
+### 5. [Ruby Performance](examples/05_ruby/README.md)
+Optimize Ruby and ActiveRecord usage:
+- Batch processing
+- Memory management
+- Query optimization
+- Connection pooling
 
 ## 🎮 Interactive Learning Tips
 
@@ -177,102 +136,15 @@ def controlled_chaos
 end
 ```
 
-3. **Build Your Own Examples**
-```ruby
-class YourAwesomeExample < Workshop
-  def initialize
-    super
-    @creativity = MAX_LEVEL
-  end
-end
-```
-
 ## 📋 Common Ruby/PostgreSQL Gotchas
 
-Here are some common pitfalls Ruby developers encounter when working with PostgreSQL and how to avoid them:
+For detailed examples and solutions to common issues, see:
+- [N+1 Query Solutions](examples/05_ruby/README.md#n1-queries)
+- [Memory Management](examples/05_ruby/README.md#memory-management)
+- [Connection Pooling](examples/05_ruby/README.md#connection-pooling)
+- [Query Optimization](examples/03_queries/README.md#optimization-techniques)
 
-### 1. N+1 Queries
-```ruby
-# ❌ Bad: Generates N+1 queries
-users.each do |user|
-  puts user.posts.count
-end
-
-# ✅ Good: Uses includes and counter cache
-users = User.includes(:posts)
-users.each do |user|
-  puts user.posts_count  # Using counter cache
-end
-```
-
-### 2. Data Type Mismatches
-```ruby
-# ❌ Gotcha: Ruby Time vs PostgreSQL timestamp
-# PostgreSQL timestamps are UTC, Ruby Times are zone-aware
-created_at: Time.now  # Might lead to timezone issues
-
-# ✅ Better: Be explicit about timezones
-created_at: Time.now.utc
-```
-
-### 3. Large Transactions
-```ruby
-# ❌ Memory-intensive: Loading all records
-User.all.each do |user|
-  user.update(last_seen: Time.now)
-end
-
-# ✅ Better: Use find_each for batching
-User.find_each do |user|
-  user.update(last_seen: Time.now)
-end
-```
-
-### 4. JSON/JSONB Usage
-```ruby
-# ❌ Inefficient: Loading entire JSON
-user.metadata['deep']['nested']['value']
-
-# ✅ Better: Use PostgreSQL's JSON operators
-User.where("metadata #>> '{deep,nested,value}' = ?", 'target')
-```
-
-### 5. Connection Pool Management
-```ruby
-# ❌ Risky: Not releasing connections
-Thread.new do
-  User.first  # Connection might not be released
-end
-
-# ✅ Better: Ensure connection release
-Thread.new do
-  ActiveRecord::Base.connection_pool.with_connection do
-    User.first
-  end
-end
-```
-
-### 6. Index Usage
-```ruby
-# ❌ Might not use index
-User.where("lower(email) = ?", email.downcase)
-
-# ✅ Better: Use expression index
-# add_index :users, 'lower(email)'
-User.where("lower(email) = lower(?)", email)
-```
-
-### 7. Bulk Operations
-```ruby
-# ❌ Slow: Individual inserts
-users.each { |u| User.create!(u) }
-
-# ✅ Better: Bulk insert
-User.insert_all!(users)
-```
-
-
-## 📖 Additional Resources
+## 📘 Additional Resources
 
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [TimescaleDB Documentation](https://docs.timescale.com/)
@@ -280,7 +152,7 @@ User.insert_all!(users)
 
 ## 🎉 Ready to Begin?
 
-Start with the [PostgreSQL Internals](examples/01_storage/README.md) section and work your way through each module at your own pace. Remember:
+Start with the [Core Concepts](#-core-concepts) section and then proceed to [PostgreSQL Internals](examples/01_storage/README.md). Remember:
 
 ```ruby
 module WorkshopPhilosophy
@@ -401,17 +273,20 @@ end
 User.where("name LIKE ?", "%john%")
 ```
 
-### TimescaleDB Issues
+### TimescaleDB tips
 
 In case you get locked while inserting data into a hypertable, you can use the following code to insert data in batches by hour.
 
+Avoid inserting data in unsorted batches, as it will create a new chunk dynamically. Instead, sort the data by time first. Grouping by time will create a new chunk for each batch, and two processes will compete to create new chunks, locking the table.
+
+
 ```ruby
-# Issue: Slow inserts with many chunks
+# Issue: Slow inserts with many chunks, returning all the data at once
+Metric.insert_all(metrics_data) # bad 
+
 # Solution: Use bulk inserts with appropriate time batching
-Metric.insert_all!(
-  metrics_data.group_by { |m| m[:time].beginning_of_hour }
-    .map { |_, batch| batch }
-)
+metrics_data.group_by { |m| m[:time].beginning_of_hour }
+  .each{ |_, batch| Metric.insert_all!( batch, returning: false )} # good
 ```
 
 #### Why is this happening?
@@ -704,16 +579,6 @@ end
 User.where("name LIKE ?", "%john%")
 ```
 
-### TimescaleDB tips
-
-Avoid inserting data in unsorted batches, as it will create a new chunk dynamically. Instead, sort the data by time first. Grouping by time will create a new chunk for each batch, and two processes will compete to create new chunks, locking the table.
-
-```ruby
-# Issue: Slow inserts with many chunks
-# Solution: Use bulk inserts with appropriate time batching
-metrics_data.group_by { |m| m[:time].beginning_of_hour }
-  .map { |_, batch| Metric.insert_all!( batch ) }
-```
 
 ## ORM Comparison (ActiveRecord vs Sequel)
 

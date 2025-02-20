@@ -1,6 +1,20 @@
 # Ruby Performance Optimization Guide
 
-This section focuses on Ruby-specific optimizations and tools that complement PostgreSQL performance tuning. We'll explore community-tested practices and provide concrete performance metrics for various operations.
+This section focuses on Ruby-specific optimizations and tools that complement PostgreSQL performance tuning. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
+
+## Prerequisites
+
+Before starting this module, ensure you understand:
+- [Query Plan](../../GLOSSARY.md#query-plan)
+- [Index](../../GLOSSARY.md#index)
+- [Transaction](../../GLOSSARY.md#transaction)
+- [Query Optimization](../03_queries/README.md#query-optimization)
+
+## Related Concepts
+
+- [MVCC](../../GLOSSARY.md#mvcc)
+- [Statistics](../../GLOSSARY.md#statistics)
+- [Buffer Management](../../GLOSSARY.md#buffer-management)
 
 ## 🔍 Benchmark Results
 
@@ -93,7 +107,7 @@ This section focuses on Ruby-specific optimizations and tools that complement Po
 
 ### 3. Query Optimization
 - Ensure proper indexes for frequently queried columns
-- Use EXPLAIN ANALYZE to understand query plans
+- Use [EXPLAIN ANALYZE](../../GLOSSARY.md#explain-analyze) to understand query plans
 - Optimize complex queries with appropriate SELECT clauses
 - Monitor query counts and execution times
 
@@ -524,3 +538,13 @@ Key Findings:
   - `preload`: Best for simple associations
   - `eager_load`: Efficient for filtering
   - `includes`: Smart choice for general use
+```
+
+## Congratulations! 🎉
+
+You've completed all modules of the PostgreSQL Performance Workshop! For a refresher on any topics, refer back to:
+- [Storage & Internals](../01_storage/README.md)
+- [Transaction Management](../02_transactions/README.md)
+- [Query Optimization](../03_queries/README.md)
+- [TimescaleDB Extension](../04_timescale/README.md)
+- [Glossary](../../GLOSSARY.md)

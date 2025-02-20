@@ -1,10 +1,24 @@
 # TimescaleDB Workshop
 
-This section focuses on understanding and leveraging TimescaleDB, a powerful time-series database extension for PostgreSQL, through practical examples using IoT sensor data scenarios.
+This section focuses on understanding and leveraging TimescaleDB, a powerful time-series database extension for PostgreSQL. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
+
+## Prerequisites
+
+Before starting this module, ensure you understand:
+- [Query Plan](../../GLOSSARY.md#query-plan)
+- [Partition](../../GLOSSARY.md#partition)
+- [Materialized View](../../GLOSSARY.md#materialized-view)
+- [Query Optimization](../03_queries/README.md#query-optimization)
+
+## Related Concepts
+
+- [Index](../../GLOSSARY.md#index)
+- [Statistics](../../GLOSSARY.md#statistics)
+- [BRIN Index](../../GLOSSARY.md#brin-index)
 
 ## Introduction to Hypertables
 
-Hypertables are the foundation of TimescaleDB's time-series optimization. They automatically partition your data into chunks based on time intervals, providing several benefits:
+[Hypertables](../../GLOSSARY.md#hypertable) are the foundation of TimescaleDB's time-series optimization. They automatically partition your data into chunks based on time intervals, providing several benefits:
 
 1. **Automatic Partitioning**
    - Time-based chunking for efficient data management
@@ -33,7 +47,7 @@ This workshop consists of the following files:
 
 2. [`practice_timescale.rb`](practice_timescale.rb)
    - Time-bucket query examples
-   - Continuous aggregate demonstrations
+   - [Continuous Aggregate](../../GLOSSARY.md#continuous-aggregate) demonstrations
    - Chunk management and compression
    - Query performance analysis
 
@@ -352,4 +366,10 @@ Optimization Areas:
 1. [TimescaleDB Documentation](https://docs.timescale.com/)
 2. [Continuous Aggregates Guide](https://docs.timescale.com/use-timescale/latest/continuous-aggregates/about-continuous-aggregates/)
 3. [Compression Documentation](https://docs.timescale.com/use-timescale/latest/compression/about-compression/)
-4. [Query Optimization Tips](https://docs.timescale.com/use-timescale/latest/query-data/query-optimization/) 
+4. [Query Optimization Tips](https://docs.timescale.com/use-timescale/latest/query-data/query-optimization/)
+
+## Next Steps
+
+After completing this module, proceed to:
+1. [Ruby Performance](../05_ruby/README.md) to learn about Ruby-specific optimizations
+2. Review [Query Optimization](../03_queries/README.md) with time-series data in mind 

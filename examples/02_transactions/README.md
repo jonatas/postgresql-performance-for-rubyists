@@ -1,6 +1,20 @@
 # PostgreSQL Transactions Deep Dive
 
-This module focuses on understanding PostgreSQL's transaction management, isolation levels, and common concurrency challenges like deadlocks. Through practical examples, you'll learn how PostgreSQL handles concurrent operations and how to design robust transaction strategies.
+This module focuses on understanding PostgreSQL's transaction management, isolation levels, and common concurrency challenges like deadlocks. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
+
+## Prerequisites
+
+Before starting this module, ensure you understand:
+- [ACID Properties](../../GLOSSARY.md#acid)
+- [MVCC](../../GLOSSARY.md#mvcc)
+- [Transaction](../../GLOSSARY.md#transaction)
+- [Storage Layout](../01_storage/README.md#storage-layout)
+
+## Related Concepts
+
+- [WAL (Write-Ahead Log)](../../GLOSSARY.md#wal)
+- [Query Planning](../03_queries/README.md#query-planning)
+- [Buffer Management](../../GLOSSARY.md#buffer-management)
 
 ## Database Structure
 
@@ -58,6 +72,8 @@ graph TB
     note[" Behaves as Read Committed in PostgreSQL"]
     note --> RL
 ```
+
+For more details on isolation levels, see [Isolation Level](../../GLOSSARY.md#isolation-level).
 
 #### Isolation Level Characteristics
 
@@ -167,33 +183,15 @@ sequenceDiagram
     T1->>T1: Transaction Completes
 ```
 
+For more information about deadlocks, see [Deadlock](../../GLOSSARY.md#deadlock).
+
 ## Key Concepts
 
 ### 1. Transaction Properties (ACID)
-- **Atomicity**: All or nothing execution
-- **Consistency**: Database remains valid after transaction
-- **Isolation**: Transactions don't interfere with each other
-- **Durability**: Committed changes are permanent
+See [ACID Properties](../../GLOSSARY.md#acid) in the glossary.
 
 ### 2. Lock Types
-PostgreSQL uses various lock types:
-```
-- Row-Level Locks
-  - FOR UPDATE
-  - FOR NO KEY UPDATE
-  - FOR SHARE
-  - FOR KEY SHARE
-  
-- Table-Level Locks
-  - ACCESS SHARE
-  - ROW SHARE
-  - ROW EXCLUSIVE
-  - SHARE UPDATE EXCLUSIVE
-  - SHARE
-  - SHARE ROW EXCLUSIVE
-  - EXCLUSIVE
-  - ACCESS EXCLUSIVE
-```
+PostgreSQL uses various lock types. For details, see [Lock Types](../../GLOSSARY.md#lock-types).
 
 ### 3. Deadlock Detection
 PostgreSQL automatically detects deadlocks:
@@ -354,3 +352,9 @@ After completing this module, you should understand:
 3. Proper transaction isolation level selection is crucial for application correctness
 4. Lock management requires careful consideration to avoid performance issues
 5. Transaction scope should be as narrow as possible while maintaining consistency 
+
+## Next Steps
+
+After completing this module, proceed to:
+1. [Query Optimization](../03_queries/README.md) to learn how transactions affect query performance
+2. [TimescaleDB Extension](../04_timescale/README.md) to understand time-series data management 
