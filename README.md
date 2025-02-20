@@ -315,7 +315,38 @@ end
 
 Happy learning! 🚀✨
 
-## ORM Comparison (ActiveRecord vs Sequel)
+## 📘 Section Prerequisites and Dependencies
+
+Most of the sections builds upon knowledge from previous ones. Here's what you need to know before starting each module:
+
+### 1. PostgreSQL Internals (01_storage)
+- ✅ Basic SQL knowledge
+- ✅ Understanding of Ruby objects and memory model
+
+### 2. Transaction Management (02_transactions)
+- ✅ Completed Storage section
+- ✅ Understanding of Ruby threads and processes
+- ✅ Basic knowledge of database transactions
+
+### 3. Query Optimization (03_queries)
+- ✅ Completed Transaction Management
+- ✅ Familiarity with ActiveRecord queries
+- ✅ Basic understanding of database indexes
+
+### 4. TimescaleDB Extension (04_timescale)
+- ✅ Completed Query Optimization
+- ✅ Understanding of time-series data concepts
+- ✅ Familiarity with PostgreSQL extensions
+
+### 5. Ruby Performance (05_ruby)
+- ✅ Completed TimescaleDB Extension
+- ✅ Understanding of Ruby performance optimization techniques  
+
+# Notes and learnings
+
+Here's a list of notes and learnings from the workshop.
+
+## 📊 ORM Comparison (ActiveRecord vs Sequel)
 
 This example demonstrates performance differences between ActiveRecord and Sequel across various operations:
 
@@ -342,31 +373,6 @@ This example demonstrates performance differences between ActiveRecord and Seque
    - Sequel's method chaining is 1.30x faster
    - Sequel: 162.2 i/s
    - ActiveRecord: 124.6 i/s
-
-## 📘 Section Prerequisites and Dependencies
-
-Each section builds upon knowledge from previous ones. Here's what you need to know before starting each module:
-
-### 1. PostgreSQL Internals (01_storage)
-
-- ✅ Basic SQL knowledge
-- ✅ Understanding of Ruby objects and memory model
-
-### 2. Transaction Management (02_transactions)
-- ✅ Completed Storage section
-- ✅ Understanding of Ruby threads and processes
-- ✅ Basic knowledge of database transactions
-
-### 3. Query Optimization (03_queries)
-- ✅ Completed Transaction Management
-- ✅ Familiarity with ActiveRecord queries
-- ✅ Basic understanding of database indexes
-
-### 4. TimescaleDB Extension (04_timescale)
-- ✅ Completed Query Optimization
-- ✅ Understanding of time-series data concepts
-- ✅ Familiarity with the TimescaleDB extension
-
 
 ## 🔧 Troubleshooting Guide
 
@@ -415,6 +421,8 @@ User.where("name LIKE ?", "%john%")
 
 ### TimescaleDB Issues
 
+In case you get locked while inserting data into a hypertable, you can use the following code to insert data in batches by hour.
+
 ```ruby
 # Issue: Slow inserts with many chunks
 # Solution: Use bulk inserts with appropriate time batching
@@ -423,6 +431,10 @@ Metric.insert_all!(
     .map { |_, batch| batch }
 )
 ```
+
+#### Why is this happening?
+
+> The problem is that the insert is happening over multiple chunks, and two process are competing to create new chunks. Grouping by hour makes sure no batches overlap with each other, reducing the time the transaction is locked.
 
 ## 🔍 Performance Comparison Tables
 
@@ -752,3 +764,17 @@ It will be given at the following conferences:
 - [Tropical On Rails 2025](https://tropicalonrails.com/)
 
 If you're interested in running this workshop for your conference or meetup, please [contact me](mailto:jonatas@timescale.com).
+
+## 📚 Workshop Chapters
+
+1. [PostgreSQL Internals](examples/01_storage/README.md) - Understanding storage, TOAST, and WAL
+2. [Transaction Management](examples/02_transactions/README.md) - Mastering isolation levels and concurrency
+3. [Query Optimization](examples/03_queries/README.md) - Advanced query tuning and performance
+4. [TimescaleDB Extension](examples/04_timescale/README.md) - Time-series data management
+5. [Ruby Performance](examples/05_ruby/README.md) - Ruby-specific optimizations and best practices
+
+## 🚀 Ready to Start?
+
+Begin your journey with [Chapter 1: PostgreSQL Internals](examples/01_storage/README.md) to build a solid foundation in database storage concepts. Each chapter builds upon the knowledge from previous ones, so it's recommended to follow them in order.
+
+Happy learning! 🎯
