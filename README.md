@@ -8,19 +8,16 @@ This workshop is organized into progressive modules, each building upon the prev
 
 ```mermaid
 graph TD
-    A[Fundamentals] -->|Core Concepts| B[Storage & Internals]
-    B -->|Understanding Storage| C[Transaction Management]
-    C -->|Concurrency Control| D[Query Optimization]
-    D -->|Performance Tuning| E[TimescaleDB Extension]
-    E -->|Time Series| F[Ruby Performance]
-    
-    A -->|"See: GLOSSARY.md"| G[Common Terms]
-    B -->|"See: 01_storage/README.md"| H[TOAST & WAL]
-    C -->|"See: 02_transactions/README.md"| I[Isolation Levels]
-    D -->|"See: 03_queries/README.md"| J[Query Planning]
-    E -->|"See: 04_timescale/README.md"| K[Hypertables]
-    F -->|"See: 05_ruby/README.md"| L[Ruby Optimizations]
+    A[PostgreSQL Internals] -->|"See: 01_storage/README.md"| B[Transaction Management]
+    B -->|"See: 02_transactions/README.md"| C[Query Optimization]
+    C -->|"See: 03_queries/README.md"| D[TimescaleDB Extension]
+    D -->|"See: 04_timescale/README.md"| E[Ruby Performance]
+    E -->|"See: 05_ruby/README.md"| F[Performance Monitoring]
 ```
+
+The [troubleshooting section](TROUBLESHOOTING.md) is optional and can be accessed at any time.
+
+The [glossary](GLOSSARY.md) is also optional and can be accessed at any time.
 
 ## 🎯 Prerequisites
 
@@ -43,9 +40,21 @@ cd postgresql-performance-for-rubyists
 ```
 
 2. Set up your database:
+
+You can use Docker to setup a TimescaleDB database:
+
+```bash
+docker run -d --rm -it -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=$USER -e POSTGRES_DATABASE=workshop_db -p 5432:5432 timescale/timescaledb-ha:pg17
+```
+Then test if it's working:
+
+```bash
+psql -h 0.0.0.0 -d workshop_db
+```
+
 ```ruby
 # In your terminal
-export DATABASE_URL="postgres://user:pass@localhost:5432/workshop_db"
+export DATABASE_URL="postgres://${USER}@0.0.0.0:5432/workshop_db"
 ```
 
 3. Verify your setup:
@@ -675,8 +684,19 @@ module Contributor
 end
 ```
 
-## 📖 Additional Resources
+## 📘 Additional Resources
 
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [TimescaleDB Documentation](https://docs.timescale.com/)
 - [Ruby on Rails Active Record Query Interface](https://guides.rubyonrails.org/active_record_querying.html)
+- [Workshop Troubleshooting Guide](TROUBLESHOOTING.md) - Common issues, solutions, and performance comparisons
+
+## About this Workshop
+
+This workshop is given at the following conferences:
+- [Ruby Community Conference 2025](https://rubycommunityconference.com/)
+- [Tropical On Rails 2025](https://tropicalonrails.com/)
+
+If you're interested in running this workshop for your conference or meetup, please [contact me](mailto:jonatas@timescale.com).
+
+Happy learning! 🚀✨
