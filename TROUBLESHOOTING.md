@@ -141,26 +141,7 @@ continuous_aggregates scopes: [:avg_temperature],
   }
 ```
 
-## ORM Performance Comparison
 
-### Query Types Performance (ops/sec)
-
-| Operation Type | ActiveRecord | Sequel | Raw SQL | Notes |
-|---------------|--------------|--------|---------|-------|
-| Simple Select | 82.6 | 10,178.6 | 12,450.2 | Sequel shines in simple queries |
-| Complex Joins | 28.7 | 93.3 | 105.1 | AR overhead significant |
-| Aggregations | 220.2 | 164.0 | 245.3 | AR optimized for counts |
-| Bulk Inserts | 215.7 | 272.6 | 310.4 | Use specialized methods |
-| JSON Operations | 145.3 | 188.9 | 195.7 | Native JSON operators help |
-
-### Memory Usage Patterns (MB)
-
-| Operation Type | ActiveRecord | Sequel | Raw SQL | Notes |
-|---------------|--------------|--------|---------|-------|
-| Large Result Set | 125 | 45 | 30 | AR objects consume more memory |
-| Batch Processing | 60 | 35 | 25 | Use find_each for AR |
-| JSON Processing | 80 | 50 | 45 | JSONB more efficient than JSON |
-| Aggregations | 40 | 35 | 30 | Similar memory patterns |
 
 ## Real-World Scenarios
 
