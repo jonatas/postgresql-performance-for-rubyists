@@ -1016,28 +1016,28 @@ PostgreSQL's method for handling concurrent access to data.
 **Visual Representation**:
 ```ascii
 Transaction Timeline and Row Versions
-┌────────────────────────────────────────────────────────┐
-│ Time ──────────────────────────────────────────────►   │
-│                                                        │
-│ Txn 1    ┌──────┐ UPDATE row      COMMIT              │
-│          │ Begin │────────┐───────────┐               │
-│          └──────┘         │           │               │
-│                          ┌▼─────────┐  │               │
-│ Row      │ Version 1 │──►│Version 2 │◄─┘               │
-│ Versions └──────────┘    └─────────┘                  │
-│                          │                            │
+┌──────────────────────────────────────────────────────┐
+│ Time ──────────────────────────────────────────────► │
+│                                                      │
+│ Txn 1    ┌──────┐ UPDATE row      COMMIT             │
+│          │ Begin │────────┐───────────┐              │
+│          └──────┘         │           │              │
+│                          ┌▼─────────┐  │             │
+│ Row      │ Version 1 │──►│Version 2 │◄─┘             │
+│ Versions └──────────┘    └─────────┘                 │
+│                          │                           │
 │ Txn 2              ┌─────▼────┐        ┌─────┐       │
-│                    │ SELECT   │────────►│ v1  │       │
+│                    │ SELECT   │────────►│ v1  │      │
 │                    └──────────┘        └─────┘       │
-└────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────┘
 
 Tuple Structure with MVCC Info
 ┌──────────────────────────────────────────┐
 │              Tuple Header                │
-├──────────┬──────────┬──────────┬────────┤
+├──────────┬──────────┬──────────┬─────────┤
 │  xmin    │  xmax    │  command │ infomask│
-│(creator) │(deleter) │   id     │        │
-├──────────┴──────────┴──────────┴────────┤
+│(creator) │(deleter) │   id     │         │
+├──────────┴──────────┴──────────┴─────────┤
 │             Tuple Data                   │
 └──────────────────────────────────────────┘
 
@@ -1046,7 +1046,7 @@ MVCC Visibility Rules
 │ Current Txn: 50 │     │ Snapshot     │
 └────────┬────────┘     │ xmin: 45     │
          │              │ xmax: 50     │
-         │              │ active: [48]  │
+         │              │ active: [48] │
          ▼              └──────────────┘
 ┌─────────────────────────────────────────┐
 │ Row visible if:                         │
@@ -1057,7 +1057,6 @@ MVCC Visibility Rules
 └─────────────────────────────────────────┘
 ```
 
-[Rest of the MVCC content remains unchanged...]
 </details>
 
 ## P
@@ -1234,7 +1233,57 @@ FROM pg_stat_user_tables;
 
 ### Query Plan
 
-The sequence of operations PostgreSQL will perform to execute a query.
+The sequence of operations PostgreSQL will perform to execute a query. The planning works like a route calculator. Look at the query and determine the best way to execute it.
+
+<details>
+<summary>Detailed Explanation</summary>
+
+**Planning Process**:
+
+1. **Parsing**: Convert SQL into a parse tree
+2. **Planning**: Convert parse tree into a query plan
+3. **Execution**: Execute the query plan
+
+**Query Plan Components**:
+
+- **Planner**: Determines the best way to execute the query
+- **Cost**: Estimated cost of executing the query
+- **Operator**: The operation to execute
+- **Subplan**: A subquery in the query
+
+**Query Plan Example**: 
+
+```sql
+EXPLAIN ANALYZE SELECT * FROM users WHERE id = 1;
+``` 
+
+**Query Plan Output**:
+
+```sql
+QUERY PLAN
+Seq Scan on users (cost=0.00..1.00 rows=1 width=8) (actual time=0.016..0.016 rows=1 loops=1)
+Filter: (id = 1)
+Rows Removed by Filter: 999999
+```
+
+**Query Plan Analysis**:
+
+- **Seq Scan**: Sequential scan of the table
+- **Filter**: Filter the rows where id = 1
+- **Rows Removed by Filter**: 999999 rows were removed by the filter  
+
+**Query Plan Tips**:
+
+- **Cost**: The cost of the query plan
+- **Operator**: The operation to execute
+- **Subplan**: A subquery in the query 
+
+Extra resources:
+- Use visual tools like [explain.depesz.com](https://explain.depesz.com/) to visually understand the query plan.
+- [Explaining PostgreSQL Explain](https://www.timescale.com/learn/explaining-postgresql-explain)
+- [PostgreSQL Query Plan Visualization](https://pganalyze.com/docs/query-plans)
+
+</details>
 
 ## R
 
@@ -1242,15 +1291,132 @@ The sequence of operations PostgreSQL will perform to execute a query.
 A command to rebuild corrupted or outdated indexes.
 
 ### ROLLBACK
-A command that undoes all changes made in the current transaction.
+
+A command that undoes all changes made in the current transaction. Think about it like a time machine. It allows you to undo the changes you made in the current transaction.
+
+The coolest part of it is that you can rollback to a specific point in time.
+
+<details>
+<summary>Detailed Explanation</summary>
+
+**Basic Usage**:
+
+```sql
+BEGIN;
+UPDATE users SET balance = balance - 100 WHERE id = 1;
+SELECT balance FROM users WHERE id = 1; -- 900
+ROLLBACK;
+SELECT balance FROM users WHERE id = 1; -- 1000
+```
+
+**When to use**:
+- When you want to undo the changes you made in the current transaction
+- When you want to rollback to a specific point in time
+- When you want to undo the changes you made in the current transaction
+
+**Tips**:
+- Use `SAVEPOINT` to save a point in time
+- Use `ROLLBACK TO SAVEPOINT` to rollback to a specific point in time
+- Use `RELEASE SAVEPOINT` to release a savepoint
+
+Example:
+```sql
+BEGIN;
+UPDATE users SET balance = balance - 100 WHERE id = 1;
+-- 900
+SELECT balance FROM users WHERE id = 1; 
+SAVEPOINT my_savepoint;
+UPDATE users SET balance = balance + 100 WHERE id = 1;
+-- 1000
+SELECT balance FROM users WHERE id = 1; 
+ROLLBACK TO SAVEPOINT my_savepoint;
+-- 900
+SELECT balance FROM users WHERE id = 1; 
+RELEASE SAVEPOINT my_savepoint;
+COMMIT;
+-- 1000
+SELECT balance FROM users WHERE id = 1; 
+```
+
+The main difference between `ROLLBACK` and `ROLLBACK TO SAVEPOINT` is that `ROLLBACK` undoes all changes made in the current transaction, while `ROLLBACK TO SAVEPOINT` undoes all changes made after the savepoint was created.
+
+</details>
 
 ## S
 
 ### Sequence
 A database object that generates unique numeric identifiers.
 
+<details>
+<summary>Detailed Explanation</summary>
+
+**Basic Usage**:
+```sql
+CREATE SEQUENCE users_id_seq;
+SELECT nextval('users_id_seq'); -- 1
+SELECT setval('users_id_seq', 100); -- update the sequence to 100
+SELECT currval('users_id_seq'); -- 100
+SELECT lastval(); -- 100
+```
+
+**Ruby Implementation**:
+```ruby
+class CreateUsers < ActiveRecord::Migration[7.0]
+  def change
+    create_sequence :users_id_seq
+  end
+end
+```
+
+**When to use**:
+- When you need a unique numeric identifier
+- When you need a unique identifier for a table
+- When you need a unique identifier for a table
+
+**Tips**:
+- Use `nextval` to get the next value in the sequence
+- Use `setval` to set the value of the sequence
+- Use `currval` to get the current value of the sequence
+- Use `lastval` to get the last value of the sequence
+
+The shortest way to get a sequence is use `serial` in the migration.
+
+```ruby
+create_table :users do |t|
+  t.serial :id
+end
+```
+
+This will create a sequence called `users_id_seq` and a column `id` that will be an integer. The column will be auto-incremented.
+
+</details>
+
+
 ### Statistics
-Information about table contents used by the query planner.
+Information about table contents used by the query planner. It's very important to understand that the query planner uses the statistics to determine the best way to execute the query.
+
+<details>
+<summary>Detailed Explanation</summary>
+
+**Basic Usage**:
+```sql
+ANALYZE users;
+```
+
+**Why statistics are important for performance**:
+
+- The query planner uses the statistics to determine the best way to execute the query.
+- The query planner uses the statistics to determine the best way to execute the query.
+
+**Tips**:
+- Use `ANALYZE` to update the statistics
+- Use `VACUUM ANALYZE` to update the statistics and vacuum the table
+- Use `VACUUM FULL ANALYZE` to update the statistics and vacuum the table
+
+The difference of having  FULL ANALYZE is that it will rewrite the table.
+
+
+</details>
 
 ## T
 
@@ -1482,51 +1648,50 @@ WAL Write Process
 │                                                     │
 │  Client   Transaction   WAL Buffer    WAL Files     │
 │                                                     │
-│  ┌────┐   ┌────────┐   ┌─────────┐  ┌──────────┐   │
-│  │App │──►│BEGIN   │──►│ WAL Rec │─►│Segment 1 │   │
-│  └────┘   │UPDATE  │   │ Buffer  │  └──────────┘   │
-│           │COMMIT  │   └─────────┘  ┌──────────┐   │
-│           └────────┘                │Segment 2 │   │
-│                                     └──────────┘   │
+│  ┌────┐   ┌────────┐   ┌─────────┐  ┌──────────┐    │
+│  │App │──►│BEGIN   │──►│ WAL Rec │─►│Segment 1 │    │
+│  └────┘   │UPDATE  │   │ Buffer  │  └──────────┘    │
+│           │COMMIT  │   └─────────┘  ┌──────────┐    │
+│           └────────┘                │Segment 2 │    │
+│                                     └──────────┘    │
 └─────────────────────────────────────────────────────┘
 
 WAL Record Structure
-┌──────────────────────────────────────────────────┐
-│                  WAL Record                      │
+┌─────────────────────────────────────────────────┐
+│                  WAL Record                     │
 ├────────┬─────────┬──────────┬──────────┬────────┤
 │Header  │Resource │Previous  │Data      │CRC     │
 │Info    │Manager  │LSN       │Block     │32      │
 ├────────┴─────────┴──────────┴──────────┴────────┤
-│             Transaction Data                     │
-└──────────────────────────────────────────────────┘
+│             Transaction Data                    │
+└─────────────────────────────────────────────────┘
 
 Checkpoint Process
-┌─────────────────────────────────────────────────┐
-│                                                 │
-│ Memory        Disk         WAL                  │
+┌────────────────────────────────────────────────┐
+│                                                │
+│ Memory        Disk         WAL                 │
 │ ┌─────────┐  ┌─────────┐  ┌─────────┐          │
 │ │Dirty    │  │         │  │         │ ──────►  │
 │ │Buffers  │─►│Data     │  │Checkpoint│ Time    │
 │ └─────────┘  │Files    │  │Record   │          │
 │              └─────────┘  └─────────┘          │
-│                                                 │
-└─────────────────────────────────────────────────┘
+│                                                │
+└────────────────────────────────────────────────┘
 
 Recovery Process
-┌──────────────────────────────────────────────┐
-│           Recovery Timeline                  │
-│                                             │
-│ Last Checkpoint    WAL Records    Current   │
+┌────────────────────────────────────────────┐
+│           Recovery Timeline                │
+│                                            │
+│ Last Checkpoint    WAL Records    Current  │
 │      ┌───┐          ┌───┐         ┌───┐    │
-│ ─────►│   │─────────►│   │────────►│   │    │
+│ ─────►│   │─────────►│   │────────►│   │   │
 │      └───┘          └───┘         └───┘    │
-│        │              │             │       │
-│     Restore        Replay         Ready     │
-│     Snapshot       Changes        to Run    │
-└──────────────────────────────────────────────┘
+│        │              │             │      │
+│     Restore        Replay         Ready    │
+│     Snapshot       Changes        to Run   │
+└────────────────────────────────────────────┘
 ```
 
-[Rest of the WAL content remains unchanged...]
 </details>
 
 ### Window Function

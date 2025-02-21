@@ -121,36 +121,10 @@ Optimize Ruby and ActiveRecord usage:
 - Query optimization
 - Connection pooling
 
-## 📚 Section Prerequisites
-
-Each section builds upon knowledge from previous ones:
-
-### 1. PostgreSQL Internals (01_storage)
-- ✅ Basic SQL knowledge
-- ✅ Understanding of Ruby objects and memory model
-
-### 2. Transaction Management (02_transactions)
-- ✅ Completed Storage section
-- ✅ Understanding of Ruby threads and processes
-- ✅ Basic knowledge of database transactions
-
-### 3. Query Optimization (03_queries)
-- ✅ Completed Transaction Management
-- ✅ Familiarity with ActiveRecord queries
-- ✅ Basic understanding of database indexes
-
-### 4. TimescaleDB Extension (04_timescale)
-- ✅ Completed Query Optimization
-- ✅ Understanding of time-series data concepts
-- ✅ Familiarity with PostgreSQL extensions
-
-### 5. Ruby Performance (05_ruby)
-- ✅ Completed TimescaleDB Extension
-- ✅ Understanding of Ruby performance optimization techniques
-
 ## 🎮 Interactive Learning Tips
 
 1. **Experiment Freely**
+
 ```ruby
 def learning_approach
   loop do
@@ -162,6 +136,7 @@ end
 ```
 
 2. **Break Things Purposefully**
+
 ```ruby
 def controlled_chaos
   begin
@@ -170,6 +145,7 @@ def controlled_chaos
     understand_why_it_failed(e)
   end
 end
+```
 
 ## 🤝 Contributing
 
