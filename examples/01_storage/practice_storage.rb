@@ -29,11 +29,11 @@ class Document < ActiveRecord::Base
   end
 end
 
-# Clean up existing records
-Document.delete_all
-
 # Create the documents table if it doesn't exist
-unless ActiveRecord::Base.connection.table_exists?('documents')
+if Document.table_exists?
+  # Clean up existing records
+  Document.delete_all
+else
   ActiveRecord::Base.connection.create_table :documents do |t|
     t.string :title
     t.text :content    # Regular text

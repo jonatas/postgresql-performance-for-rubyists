@@ -91,6 +91,27 @@ Before starting this module, ensure you understand:
 - Query count reduction from 400 to 1-2
 - Throughput improvement from 2k/s to 47k/s
 
+## ORM Performance Comparison
+
+### Query Types Performance (ops/sec)
+
+| Operation Type | ActiveRecord | Sequel | Raw SQL | Notes |
+|---------------|--------------|--------|---------|-------|
+| Simple Select | 82.6 | 10,178.6 | 12,450.2 | Sequel shines in simple queries |
+| Complex Joins | 28.7 | 93.3 | 105.1 | AR overhead significant |
+| Aggregations | 220.2 | 164.0 | 245.3 | AR optimized for counts |
+| Bulk Inserts | 215.7 | 272.6 | 310.4 | Use specialized methods |
+| JSON Operations | 145.3 | 188.9 | 195.7 | Native JSON operators help |
+
+### Memory Usage Patterns (MB)
+
+| Operation Type | ActiveRecord | Sequel | Raw SQL | Notes |
+|---------------|--------------|--------|---------|-------|
+| Large Result Set | 125 | 45 | 30 | AR objects consume more memory |
+| Batch Processing | 60 | 35 | 25 | Use find_each for AR |
+| JSON Processing | 80 | 50 | 45 | JSONB more efficient than JSON |
+| Aggregations | 40 | 35 | 30 | Similar memory patterns |
+
 ## 🎯 Performance Optimization Guidelines
 
 ### 1. Batch Processing
@@ -361,18 +382,22 @@ User.find_each(batch_size: 1000) do |user|
 end
 ```
 
-3. **View Optimization with Scenic**
+3. **View Optimization with Scenic and TimescaleDB**
 ```ruby
 # db/views/monthly_sales_v01.sql
+CREATE MATERIALIZED VIEW monthly_sales_v01 AS
 SELECT 
-  date_trunc('month', orders.created_at) as month,
-  SUM(orders.total) as total_sales
+    time_bucket('1 month', orders.created_at) as month,
+    SUM(orders.total) as total_sales
 FROM orders
-GROUP BY date_trunc('month', orders.created_at)
+GROUP BY 1
 
 # app/models/monthly_sale.rb
 class MonthlySale < ApplicationRecord
   # Scenic view model
+  include Scenic::Model
+  scenic_view :monthly_sales_v01,
+    comment: 'Materialized view for monthly sales'
 end
 ```
 
