@@ -286,28 +286,44 @@ flowchart LR
 ```
 
 ### JOIN Visualization
-```mermaid
-flowchart TD
-    subgraph "INNER JOIN"
-        A((Table A)) --> C{JOIN}
-        B((Table B)) --> C
-        C --> D[Matching Rows Only]
-    end
 
-    subgraph "LEFT JOIN"
-        E((Table A)) --> G{JOIN}
-        F((Table B)) --> G
-        G --> H[All A + Matching B]
-    end
+Every join operation has its own cost and performance characteristics. Let's see how each join type works.
 
-    subgraph "FULL JOIN"
-        I((Table A)) --> K{JOIN}
-        J((Table B)) --> K
-        K --> L[All Rows + NULLs]
-    end
-```
+#### LEFT JOIN
+
+The left join returns all rows from the left table and the matching rows from the right table. If there is no match, the result will have NULL values for the right table columns.
+
+![img/left_join.webp](../../img/left_join.webp "A kawaii felt craft scene showing the PostgreSQL elephant with a felt left join on its back. The scene includes a felt clock with a felt left join on its face, and a felt database with a felt left join on its side.")
+
+#### INNER JOIN
+
+The inner join returns only the matching rows between the two tables. If there is no match, the row is not included in the result.
+
+![img/inner_join.webp](../../img/inner_join.webp "A kawaii felt craft scene showing the PostgreSQL elephant with a felt inner join on its back. The scene includes a felt clock with a felt inner join on its face, and a felt database with a felt inner join on its side.")
+
+#### FULL OUTER JOIN
+
+The full outer join returns all rows from both tables. If there is no match, the result will have NULL values for the missing columns.
+
+![img/full_outer_join.webp](../../img/full_outer_join.webp "A kawaii felt craft scene showing the PostgreSQL elephant with a felt full outer join on its back. The scene includes a felt clock with a felt full outer join on its face, and a felt database with a felt full outer join on its side.")
+
+#### CROSS JOIN
+
+The cross join returns the Cartesian product of the two tables. It returns a row for each combination of the rows from the two tables.
+
+![img/cross_join.webp](../../img/cross_join.webp "A kawaii felt craft scene showing the PostgreSQL elephant with a felt cross join on its back. The scene includes a felt clock with a felt cross join on its face, and a felt database with a felt cross join on its side.") 
 
 ### Query Plan Tree
+
+Now, let's see how the query plan tree works. Let's build a sql query and see the query plan tree.
+
+```sql
+SELECT * FROM orders
+JOIN customers ON orders.customer_id = customers.id;
+```
+
+This SQL can be represented as a query plan tree.
+
 ```mermaid
 flowchart TD
     A[Hash Join] --> B[Hash]
@@ -320,7 +336,28 @@ flowchart TD
     style D fill:#bfb,stroke:#333
 ```
 
+If you run this query, you will see the query plan tree.
+
+```sql
+EXPLAIN ANALYZE SELECT * FROM orders
+JOIN customers ON orders.customer_id = customers.id;
+
+-- Output:
+Hash Join  (cost=33.90..125.60 rows=2564 width=37)
+  Hash Cond: (orders.customer_id = customers.id)
+  ->  Hash Join  (cost=30.77..115.17 rows=2564 width=26)
+        Hash Cond: (line_items.order_id = orders.id)
+        ->  Seq Scan on line_items
+```
+
 ### Data Flow Through Joins
+
+For each join type, the data flow is different. Let's see how the data flows through the joins.
+
+#### Nested Loop Join
+
+The nested loop join is the simplest join type. It reads the outer table and for each row, it reads the inner table and checks if there is a match.
+
 ```mermaid
 flowchart LR
     subgraph "Nested Loop Join"
@@ -341,6 +378,11 @@ flowchart LR
 ```
 
 ### Index Usage Patterns
+
+The index is a data structure that allows PostgreSQL to quickly locate the rows that match the query conditions.
+
+Sometimes the index is not used because the query planner thinks that the sequential scan is faster.
+
 ```mermaid
 flowchart TD
     A[Query with WHERE] --> B{Index Available?}
@@ -355,6 +397,8 @@ flowchart TD
 
 ## Query Execution Flow
 
+From SQL to results, there are several steps. Let's see how the query execution flow works.
+
 ```mermaid
 flowchart TD
     A[SQL Query] --> B[Parser]
@@ -364,13 +408,21 @@ flowchart TD
     E --> F[Results]
     
     subgraph Planning
-    D --> D1[Generate Plans]
-    D1 --> D2[Cost Estimation]
-    D2 --> D3[Plan Selection]
+        D --> D1[Generate Plans]
+        D1 --> D2[Cost Estimation]
+        D2 --> D3[Plan Selection]
+    end
+
+    subgraph Execution
+        E --> E1[Execute Plan]
+        E1 --> F[Results]
     end
 ```
 
 ## EXPLAIN ANALYZE Workflow
+
+The EXPLAIN ANALYZE is a command that shows the query plan and the actual execution time. It exposes the query plan and the actual execution time.
+
 
 ```mermaid
 flowchart LR
@@ -390,6 +442,8 @@ flowchart LR
 
 ## Learning Path
 
+![img/query_plan.webp](../../img/query_plan.webp "A kawaii felt craft scene showing the PostgreSQL elephant with a felt query plan on its back. The scene includes a felt clock with a felt query plan on its face, and a felt database with a felt query plan on its side.")
+
 ### 1. Understanding EXPLAIN ANALYZE Basics
 
 Think of EXPLAIN ANALYZE as PostgreSQL's built-in GPS navigation system for your queries. Just like a GPS calculates multiple routes and picks the optimal path based on traffic, distance, and road conditions, EXPLAIN ANALYZE:
@@ -407,8 +461,6 @@ Key benefits:
 
 Interactive example:
 
-#### 1.1 Simple Query Analysis
-
 ```sql
 SELECT * FROM customers WHERE country = 'USA';
 
@@ -425,6 +477,8 @@ Key components to understand:
 - **Width**: Estimated average width of rows in bytes
 
 #### 1.2 Reading Execution Statistics
+
+Reading the output of EXPLAIN ANALYZE can be overwhelming at first. Don't worry if you don't understand the output yet. We'll cover each component in detail in the next sections.
 
 ```sql
 EXPLAIN (ANALYZE, BUFFERS) 
@@ -444,6 +498,9 @@ Additional metrics:
 - **Buffers**: Memory/disk page access statistics
 
 ### 2. Common Access Methods
+
+The Access Methods are the different ways PostgreSQL can access the data. Each method has its own cost and performance characteristics.
+The query planner will choose the best access method based on the query and the table statistics.
 
 ```mermaid
 flowchart TD
@@ -744,7 +801,12 @@ end
 
 ### Query Plan Reading Tips
 
+Each query plan has different components. Let's see how to read the query plan.
+
 1. **Cost Components**
+
+   The goal of the query planner is to find the best way to execute the query. The cost is the estimated time to execute the query. The number in the cost is the estimated time in milliseconds. It was adopted long time ago when spinning disks were the main storage.
+
    ```
    (cost=0.00..2.62 rows=10 width=40)
    |     |     |     |_ Average row width in bytes
@@ -754,6 +816,9 @@ end
    ```
 
 2. **Actual vs Estimated**
+
+   The actual time is the actual time it took to execute the query. The number in the actual time is the actual time in milliseconds.
+
    ```
    (actual time=0.006..0.009 rows=10 loops=1)
    |        |     |     |     |_ Number of iterations
@@ -763,6 +828,9 @@ end
    ```
 
 3. **Buffer Statistics**
+
+   The buffer statistics show how many times the data was found in the buffer cache. While the buffer cache is a good place to store the data, it can be a problem if the data is not used. It's better to have a low number of buffer hits.
+
    ```
    Buffers: shared hit=2
    |        |     |_ Number of buffer hits
@@ -770,6 +838,10 @@ end
    ```
 
 4. **Memory Usage**
+
+   The memory usage shows how much memory was used to execute the query. The number in the memory usage is the memory in kilobytes.
+   It's also good when it's low and does not spill to disk.
+
    ```
    Memory Usage: 24kB
    Buckets: 1024
@@ -777,6 +849,8 @@ end
    ```
 
 ### Common Performance Patterns
+
+While the query plan is a good way to understand the query execution, it's not the only thing to consider. There are some common performance patterns that can help you to understand the query execution.
 
 1. **Sequential vs Index Scan**
    - Small tables (< 1000 rows): Sequential Scan is often faster
