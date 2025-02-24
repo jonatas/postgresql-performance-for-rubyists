@@ -14,7 +14,7 @@ Before starting this module, ensure you understand:
 
 ## Related Concepts
 
-- [MVCC](../../GLOSSARY.md#mvcc)
+- [MVCC](../../GLOSSARY.md#mvcc-multi-version-concurrency-control)
 - [Buffer Management](../../GLOSSARY.md#buffer-management)
 - [Storage Layout](../01_storage/README.md#storage-layout)
 

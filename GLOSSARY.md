@@ -11,10 +11,11 @@ A set of properties that guarantee database transactions are processed reliably:
 - **Isolation**: Concurrent transactions don't interfere with each other
 - **Durability**: Committed transactions are permanent
 
-![img/acid.webp](img/acid.webp "A kawaii felt craft scene showing four adorable cube characters representing ACID properties. An Atomicity cube wearing a referee outfit, a Consistency cube with a balance scale, an Isolation cube with headphones, and a Durability cube with a shield, all being conducted by a cute PostgreSQL elephant.")
-
 <details>
 <summary>Detailed Explanation</summary>
+
+![img/acid.webp](img/acid.webp "A kawaii felt craft scene showing four adorable cube characters representing ACID properties. An Atomicity cube wearing a referee outfit, a Consistency cube with a balance scale, an Isolation cube with headphones, and a Durability cube with a shield, all being conducted by a cute PostgreSQL elephant.")
+
 
 - **Atomicity**: Transactions are all-or-nothing
   ```ruby
@@ -109,12 +110,15 @@ Order.group(:status)
 ## B
 
 ### Buffer Management
-PostgreSQL's memory management system for caching frequently accessed data.
 
-![img/buffers.webp](img/buffers.webp "A kawaii felt craft scene depicting memory management as a cozy library where a PostgreSQL elephant librarian organizes data pages in cute felt buffer pools. Frequently accessed pages are shown as books with happy faces in the front shelves.")
+PostgreSQL's memory management system for caching frequently accessed data.
 
 <details>
 <summary>Detailed Explanation</summary>
+
+![img/buffers.webp](img/buffers.webp "A kawaii felt craft scene depicting memory management as a cozy library where a PostgreSQL elephant librarian organizes data pages in cute felt buffer pools. Frequently accessed pages are shown as books with happy faces in the front shelves.")
+
+The buffer cache is a pool of memory that is used to cache frequently accessed data. It is a part of the PostgreSQL's memory management system.
 
 **Buffer Cache**:
 ```
@@ -125,17 +129,10 @@ PostgreSQL's memory management system for caching frequently accessed data.
 +----------------+
 ```
 
-**Buffer Usage**:
-```sql
--- View buffer usage
-SELECT count(*) AS count,
-       sum(case when usagecount = 0 then 1 else 0 end) AS clean,
-       sum(case when usagecount != 0 then 1 else 0 end) AS dirty,
-       sum(case when usagecount != 0 and isvalid = true then 1 else 0 end) AS pinned
-FROM pg_buffercache;
-```
-
 **Buffer Tuning**:
+
+For some queries, you can try to adjust the buffer cache size.
+
 ```
 -- Adjust shared_buffers
 shared_buffers = 2GB
@@ -671,10 +668,6 @@ Header (23B) | Null Bitmap | Data | Alignment Padding
 -- Table size information
 SELECT pg_size_pretty(pg_relation_size('users')) as heap_size,
        pg_size_pretty(pg_total_relation_size('users')) as total_size;
-
--- Table bloat estimation
-SELECT schemaname, tablename, tbloat, wastedbytes
-FROM pgstattuple_approx('users');
 ```
 
 **When to consider**:
@@ -1063,10 +1056,18 @@ end
 To rollup partial refresh, also see [continuous aggregates](#continuous-aggregate).
 
 ### MVCC (Multi-Version Concurrency Control)
+
 PostgreSQL's method for handling concurrent access to data.
 
 <details>
 <summary>Detailed Explanation</summary>
+
+Imagine a table as a timeline of transactions. Each transaction has a unique id and a timestamp. The timestamp is the time when the transaction started.
+
+* When a transaction updates a row, it creates a new version of the row. The new version is the row as it was before the transaction started.
+* When a transaction reads a row, it sees the latest version of the row.
+* When a transaction commits, it updates the row with the new values. The new version is the row as it was before the transaction started.
+* When a transaction is rolled back, it deletes the new version of the row.
 
 **Visual Representation**:
 ```ascii
@@ -1117,10 +1118,14 @@ MVCC Visibility Rules
 ## P
 
 ### Partition
-A division of a large table into smaller physical pieces for better performance.
+A division of a large table into smaller physical pieces for better performance. That's it.
 
 <details>
 <summary>Detailed Explanation</summary>
+
+Partitioning is a way to divide a large table into smaller physical pieces for better performance. The greatest part is that it also includes metadata and indexes on the partition. It makes all processing units smaller as they need to process only a part of the table.
+
+  Here you can grasp the concept of partitioning and how the TimescaleDB hypertables works behind the scenes.
 
 **Partition Types**:
 ```sql
@@ -1158,26 +1163,10 @@ PARTITION OF users
 FOR VALUES WITH (MODULUS 4, REMAINDER 0);
 ```
 
-**Ruby Migration**:
-```ruby
-class CreatePartitionedEvents < ActiveRecord::Migration[7.0]
-  def up
-    execute <<-SQL
-      CREATE TABLE events (
-        id bigserial,
-        created_at timestamp,
-        data jsonb
-      ) PARTITION BY RANGE (created_at);
-      
-      CREATE TABLE events_2024_q1 
-      PARTITION OF events
-      FOR VALUES FROM ('2024-01-01') TO ('2024-04-01');
-    SQL
-  end
-end
-```
-
 **Partition Management**:
+
+The boring part of plain partitioning is maintenance. You need to attach, detach and move data between partitions.
+
 ```sql
 -- Attach new partition
 ALTER TABLE events 
@@ -1197,7 +1186,23 @@ INSERT INTO events_archive
 SELECT * FROM moved_rows;
 ```
 
-**When to use**:
+**Partitioning with TimescaleDB**:
+
+You can use TimescaleDB extension to automatically create partitions on demand.
+
+```sql
+-- Automatically create partitions using TimescaleDB
+select create_hypertable('events', by_range('created_at', INTERVAL '3 month'));
+```
+
+Timescale also allows to make partitions based on more than one dimension.
+
+```sql
+SELECT add_dimension('events', by_hash('user_id', 4));
+```
+
+**When to use partitioning**:
+
 - Very large tables (>100GB)
 - Time-based data retention
 - Different storage policies
@@ -1208,6 +1213,9 @@ SELECT * FROM moved_rows;
 - Plan for future growth
 - Consider maintenance overhead
 - Monitor partition usage
+
+For more information, see [PostgreSQL Partitioning](https://www.postgresql.org/docs/current/ddl-partitioning.html).
+
 </details>
 
 ### Primary Key
@@ -1259,6 +1267,9 @@ end
 ```
 
 **Performance Considerations**:
+
+If you have a primary key, it will be used to speed up the queries. But you need to consider that it will also slow down the inserts and updates.
+
 ```sql
 -- Check primary key usage
 SELECT schemaname, relname, indexrelname, 
