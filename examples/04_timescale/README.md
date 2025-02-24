@@ -672,6 +672,4 @@ end
 
 ## Next Steps
 
-After completing this module, proceed to:
-1. [Ruby Performance](../05_ruby/README.md) to learn about Ruby-specific optimizations
-2. Review [Query Optimization](../03_queries/README.md) with time-series data in mind 
+After completing this module, next step is to learn about [Ruby Performance](../05_ruby/README.md).

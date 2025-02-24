@@ -109,54 +109,6 @@ Every PostgreSQL table is stored as an array of 8KB pages. Here's a simplified v
 +--------------------------------+ 8192
 ```
 
-For more details on specific concepts, see:
-- [Heap](../../GLOSSARY.md#heap)
-- [MVCC](../../GLOSSARY.md#mvcc)
-- [VACUUM](../../GLOSSARY.md#vacuum)
-
-## Next Steps
-
-After completing this module, proceed to:
-1. [Transaction Management](../02_transactions/README.md) to learn how PostgreSQL handles concurrent access
-2. [Query Optimization](../03_queries/README.md) to understand how storage affects query performance
-
-## PostgreSQL Storage Layout
-
-### 1. Basic Page Layout (8KB)
-Every PostgreSQL table is stored as an array of 8KB pages. Here's a simplified view of how a single page is organized:
-
-```ascii
-+--------------------------------+ 0
-|           Page Header          |
-|             (24B)              |
-+--------------------------------+ 24
-|         Item Pointers          |
-| (4B each, points to row data) |
-+--------------------------------+ varies
-|                                |
-|          Free Space            |
-|     (available for growth)     |
-|                                |
-+--------------------------------+ varies
-|    Row 1 Data                  |
-|    - Header (23B)             |
-|    - Null bitmap              |
-|    - User data                |
-|    - Alignment padding        |
-+--------------------------------+
-|    Row 2 Data                  |
-|    - Header (23B)             |
-|    - Null bitmap              |
-|    - User data                |
-|    - Alignment padding        |
-+--------------------------------+
-|           More Rows...         |
-+--------------------------------+
-|    Special Space (optional)    |
-|    (index data, etc.)         |
-+--------------------------------+ 8192
-```
-
 Key Components:
 1. Page Header (24B): Metadata about the page
 2. Item Pointers: Array pointing to tuple locations
@@ -885,3 +837,7 @@ From our practical examples, we learned:
 - [PostgreSQL Documentation: Database Page Layout](https://www.postgresql.org/docs/current/storage-page-layout.html)
 - [PostgreSQL Documentation: TOAST](https://www.postgresql.org/docs/current/storage-toast.html)
 - [PostgreSQL Documentation: Database Physical Storage](https://www.postgresql.org/docs/current/storage.html)
+
+## Next chapter
+
+Now, it's time to dive into [Postgresql Transactions](../02_transactions/README.md).
