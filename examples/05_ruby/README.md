@@ -2,6 +2,8 @@
 
 This section focuses on Ruby-specific optimizations and tools that complement PostgreSQL performance tuning. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
 
+![img/05_ruby.webp](../../img/05_ruby.webp "A kawaii felt craft scene: A giant red felt Ruby gem with rosy cheeks wearing a racing helmet, holding hands with the PostgreSQL elephant wearing matching gear. They're surrounded by ActiveRecord associations represented as cute felt chains with heart links. Tiny felt memory pools shaped like hot springs have chibi Ruby objects relaxing in them. Connection pooling is shown as a felt telephone switchboard operated by baby elephants in operator headsets. The background features a felt performance dashboard with happy gauge faces.")
+
 ## Prerequisites
 
 Before starting this module, ensure you understand:

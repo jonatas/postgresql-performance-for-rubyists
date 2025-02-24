@@ -2,6 +2,8 @@
 
 This module focuses on understanding PostgreSQL's transaction management, isolation levels, and common concurrency challenges like deadlocks. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
 
+![img/02_transactions.webp](../../img/02_transactions.webp "A kawaii felt craft scene_ The PostgreSQL elephant wearing a cute traffic controller outfit with a tiny glowing whistle, directing adorable felt data blocks")
+
 ## Prerequisites
 
 Before starting this module, ensure you understand:

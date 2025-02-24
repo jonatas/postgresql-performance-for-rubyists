@@ -11,6 +11,8 @@ A set of properties that guarantee database transactions are processed reliably:
 - **Isolation**: Concurrent transactions don't interfere with each other
 - **Durability**: Committed transactions are permanent
 
+![img/acid.webp](img/acid.webp "A kawaii felt craft scene showing four adorable cube characters representing ACID properties. An Atomicity cube wearing a referee outfit, a Consistency cube with a balance scale, an Isolation cube with headphones, and a Durability cube with a shield, all being conducted by a cute PostgreSQL elephant.")
+
 <details>
 <summary>Detailed Explanation</summary>
 
@@ -105,6 +107,57 @@ Order.group(:status)
 </details>
 
 ## B
+
+### Buffer Management
+PostgreSQL's memory management system for caching frequently accessed data.
+
+![img/buffers.webp](img/buffers.webp "A kawaii felt craft scene depicting memory management as a cozy library where a PostgreSQL elephant librarian organizes data pages in cute felt buffer pools. Frequently accessed pages are shown as books with happy faces in the front shelves.")
+
+<details>
+<summary>Detailed Explanation</summary>
+
+**Buffer Cache**:
+```
++----------------+
+| Buffer Header  |  24 bytes
++----------------+
+| Page Data      |  8KB
++----------------+
+```
+
+**Buffer Usage**:
+```sql
+-- View buffer usage
+SELECT count(*) AS count,
+       sum(case when usagecount = 0 then 1 else 0 end) AS clean,
+       sum(case when usagecount != 0 then 1 else 0 end) AS dirty,
+       sum(case when usagecount != 0 and isvalid = true then 1 else 0 end) AS pinned
+FROM pg_buffercache;
+```
+
+**Buffer Tuning**:
+```
+-- Adjust shared_buffers
+shared_buffers = 2GB
+
+-- Monitor buffer usage
+SELECT blks_read, blks_hit
+FROM pg_stat_database
+WHERE datname = 'mydb';
+```
+
+**When to consider**:
+- Memory management
+- Performance optimization
+- Large working sets
+- Disk I/O bottlenecks
+
+**Tips**:
+- Monitor buffer usage
+- Adjust shared_buffers
+- Consider work_mem
+- Watch for buffer bloat
+</details>
 
 ### BRIN Index (Block Range Index)
 A small, summarized index type ideal for columns with natural ordering (e.g., timestamps).
@@ -205,6 +258,8 @@ end
 
 ### Continuous Aggregate
 A TimescaleDB feature that automatically maintains materialized views of aggregate queries.
+
+![img/continuous_aggregates.webp](img/continuous_aggregates.webp "A kawaii felt craft scene depicting continuous aggregates as cute calculator characters doing group hugs. Shows the PostgreSQL elephant orchestrating automatic updates while felt data points combine into summary hearts.")
 
 <details>
 <summary>Detailed Explanation</summary>

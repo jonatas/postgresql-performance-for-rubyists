@@ -2,6 +2,8 @@
 
 Welcome to an interactive journey into PostgreSQL optimization for Rubyists! This self-paced workshop will take you from understanding PostgreSQL internals to mastering TimescaleDB for time-series data. Get ready to level up your database skills! 🎯
 
+![img/intro.webp](img/intro.webp " A kawaii felt craft scene_ An adorable chubby felt elephant (PostgreSQL mascot) with big sparkly eyes and rosy cheeks, wearing a tiny crown made of red felt")
+
 ## 📚 Workshop Structure
 
 This workshop is organized into progressive modules, each building upon the previous ones:

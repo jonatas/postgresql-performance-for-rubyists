@@ -2,6 +2,8 @@
 
 This section focuses on understanding and optimizing PostgreSQL queries through practical examples and real-world scenarios. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
 
+   ![img/03_queries.webp](../../img/03_queries.webp "A kawaii felt craft scene: The PostgreSQL elephant in a detective outfit with a magnifying glass, examining an adorable felt query plan tree where each node has a happy face.")
+
 ## Prerequisites
 
 Before starting this module, ensure you understand:

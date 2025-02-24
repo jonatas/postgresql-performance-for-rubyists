@@ -2,6 +2,8 @@
 
 This module provides a practical exploration of PostgreSQL's storage mechanisms, progressing from basic concepts to advanced optimization techniques. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
 
+![img/01_storage.webp](../../img/01_storage.webp "A kawaii felt craft scene featuring a chubby felt elephant, representing the PostgreSQL mascot, wearing tiny librarian glasses. The scene is set in a cozy library with bookshelves and a cozy armchair.")
+
 ## Prerequisites
 
 Before starting this module, ensure you understand:

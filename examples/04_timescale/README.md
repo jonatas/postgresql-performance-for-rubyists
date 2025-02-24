@@ -2,6 +2,8 @@
 
 This section focuses on understanding and leveraging TimescaleDB, a powerful time-series database extension for PostgreSQL. For definitions of terms used in this module, refer to our [Glossary](../../GLOSSARY.md).
 
+![img/04_timescaledb.webp](../../img/04_timescaledb.webp "A kawaii felt craft scene showing the PostgreSQL elephant riding a cute felt clock with clock hands shaped like magic wands, surfing through waves of time-series data represented as adorable felt bubbles with timestamp faces. Tiny felt cubes (chunks) with sleepy faces stack themselves automatically into neat rows. A felt temperature chart in the background shows a line graph made of heart beats. Continuous aggregates are represented by felt calculator characters doing group hugs. The scene includes a kawaii vacuum cleaner with eyes cleaning up old data chunks. Style: Kawaii, Hello Kitty-inspired, handmade felt craft aesthetic, time-themed pastels")
+
 ## Prerequisites
 
 Before starting this module, ensure you understand:
