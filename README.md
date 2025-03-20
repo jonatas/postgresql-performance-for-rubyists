@@ -54,12 +54,16 @@ Then test if it's working:
 psql -h 0.0.0.0 -d workshop_db
 ```
 
-```ruby
+After the test you can export the database URI that will be used for all
+exercises.
+
+```bash
 # In your terminal
 export DATABASE_URL="postgres://${USER}@0.0.0.0:5432/workshop_db"
 ```
 
-3. Verify your setup:
+3. Verify your setup running the first example:
+
 ```ruby
 ruby examples/01_storage/practice_storage.rb
 # If you see table creation outputs, you're good to go! 🎉
@@ -123,9 +127,9 @@ Optimize Ruby and ActiveRecord usage:
 - Query optimization
 - Connection pooling
 
-## 🎮 Interactive Learning Tips
+## 🎮 Interactive Learning
 
-1. **Experiment Freely**
+**Experiment Freely**
 
 ```ruby
 def learning_approach
@@ -133,18 +137,6 @@ def learning_approach
     try_something_new
     break if it_works?
     learn_from_failure
-  end
-end
-```
-
-2. **Break Things Purposefully**
-
-```ruby
-def controlled_chaos
-  begin
-    push_the_limits
-  rescue PostgreSQL::Error => e
-    understand_why_it_failed(e)
   end
 end
 ```
