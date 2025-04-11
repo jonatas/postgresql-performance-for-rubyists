@@ -2,7 +2,7 @@ require 'bundler/inline'
 
 gemfile(true) do
   source 'https://rubygems.org'
-  gem 'timescaledb', path: '../timescale-gem'
+  gem 'timescaledb'
   gem 'pg'
   gem 'activerecord'
   gem 'pry'
