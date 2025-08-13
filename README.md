@@ -64,7 +64,7 @@ SELECT 'psql command-line tool';
 
 1. **Clone this repository:**
 ```bash
-git clone https://github.com/timescale/postgresql-performance-workshops
+git clone https://github.com/jonatas/postgresql-performance-workshops
 cd postgresql-performance-workshops
 ```
 
