@@ -2,30 +2,6 @@
 
 This guide contains common issues, solutions, and performance comparisons you might encounter during the workshop. Use it as a reference when you run into problems or want to understand performance tradeoffs.
 
-## Interactive Learning Tips
-
-1. **Experiment Freely**
-```ruby
-def learning_approach
-  loop do
-    try_something_new
-    break if it_works?
-    learn_from_failure
-  end
-end
-```
-
-2. **Break Things Purposefully**
-```ruby
-def controlled_chaos
-  begin
-    push_the_limits
-  rescue PostgreSQL::Error => e
-    understand_why_it_failed(e)
-  end
-end
-```
-
 ## Table of Contents
 - [Storage Issues](#storage-issues)
 - [Transaction Issues](#transaction-issues)
