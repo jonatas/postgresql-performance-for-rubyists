@@ -1,55 +1,111 @@
-# PostgreSQL Performance Workshop 🐘
-
-> **Signal vs Noise** - In a sea of data, how do you find the whales?
-
-**Jônatas Davi Paganini** - https://ideia.me  
-*Staff Developer at BaxEnergy - A Yokogawa company*
+# PostgreSQL Performance Workshop
 
 ![img/intro.webp](img/intro.webp "A kawaii felt craft scene showing a cute PostgreSQL elephant wearing a graduation cap, surrounded by colorful felt data cubes and performance graphs, representing the learning journey ahead.")
 
----
+## Jônatas Davi Paganini
 
-## Workshop Overview 🎯
+* https://ideia.me  
+* Staff Developer at BaxEnergy - A Yokogawa company
+* ex-Timescale Dev Advocate
 
-This hands-on workshop will take you through the essential concepts of PostgreSQL performance optimization, from storage internals to advanced query optimization.
+## Workshop Overview
 
---
+* hands-on workshop
+* essential concepts of PostgreSQL performance optimization
+* from storage internals to advanced query optimization 
 
-### What You'll Learn
+## What You'll Learn
 
 * **Storage & Memory Management** - Understanding how PostgreSQL stores and manages data
 * **Transaction Management** - ACID properties and concurrency control
 * **Query Optimization** - Indexes, query plans, and performance tuning
 * **TimescaleDB** - Time-series data optimization
-* **Ruby Integration** - Best practices for Rails applications
 
---
-
-### Workshop Structure
+## Workshop Structure
 
 * **4 Main Modules** - Each with hands-on exercises
 * **Interactive Polls** - Check your understanding
 * **Real Examples** - Practical code and SQL
 * **Performance Labs** - Hands-on optimization
 
----
+## Role
 
-## Module 1: Storage & Memory Management 💾
+> What's Your Role?
 
-![img/01_storage.webp](img/01_storage.webp "A kawaii felt craft scene depicting PostgreSQL storage as a cozy library where a cute elephant librarian organizes data pages in felt shelves, with TOAST storage shown as a separate felt storage room for oversized items.")
+* Developer
+* Database Admin/Specialist
+* Student
+* Other
 
---
+## Experience
 
-### What's Your Experience Level?
+What's Your Experience Level?
 
 * Beginner - Just getting started with PostgreSQL
 * Intermediate - Some experience with databases
 * Advanced - Regular PostgreSQL user
 * Expert - Database administrator or performance specialist
 
---
+# Setup
 
-### Storage Fundamentals
+* First SQL Edition :tada:
+
+## Requirements
+
+* Docker Desktop (or Engine)
+* psql (PostgreSQL client)
+* Git
+
+## Quick Start
+
+```bash
+git clone https://github.com/jonatas/postgresql-performance-workshops
+cd postgresql-performance-workshops# Pull image (first run may take a few minutes)
+docker pull timescale/timescaledb-ha:pg17# Run PostgreSQL (mapped to host port 5433)
+docker run -d --rm -it \
+  -e POSTGRES_HOST_AUTH_METHOD=trust \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DATABASE=workshop_db \
+  -p 5433:5432 \
+  timescale/timescaledb-ha:pg17
+```
+
+## Environment (.env)
+
+```bash
+cp env.example .env
+```
+
+Update `DATABASE_URL` to use the Docker port:
+
+```
+export DATABASE_URL=postgres://postgres:password@0.0.0.0:5433/workshop_db
+```
+
+## Verify Setup
+
+```bash
+# Using DATABASE_URL
+psql "$DATABASE_URL" -c "SELECT version();"# Or run the full setup test
+./setup/setup_sql.sh
+```
+
+## Troubleshooting
+
+* Database does not exist:
+```bash
+psql postgres://postgres:password@0.0.0.0:5433/postgres -c "CREATE DATABASE workshop_db;"
+```
+* Port mismatch: ensure you connect on 5433
+* Using fish shell: prefer `set VAR value` lines inside `.env`
+
+# 1: Storage & Memory Management
+
+![img/01_storage.webp](img/01_storage.webp "A kawaii felt craft scene depicting PostgreSQL storage as a cozy library where a cute elephant librarian organizes data pages in felt shelves, with TOAST storage shown as a separate felt storage room for oversized items.")
+
+
+## Storage Fundamentals
 
 PostgreSQL stores data in **pages** (8KB blocks) organized in **tablespaces**.
 
@@ -59,64 +115,58 @@ PostgreSQL stores data in **pages** (8KB blocks) organized in **tablespaces**.
 * **Buffer Cache** - Memory management system
 * **WAL** - Write-Ahead Log for durability
 
---
-
-### TOAST (The Oversized-Attribute Storage Technique)
+## TOAST (The Oversized-Attribute Storage Technique)
 
 ![img/toast.webp](img/toast.webp "A kawaii felt craft scene showing TOAST storage as a cute felt storage room where oversized data items are compressed and stored separately, with a PostgreSQL elephant managing the storage process.")
 
-**What TOAST Does**:
+## What TOAST Does
+
 * Compresses large field values
 * Stores them in separate tables
 * Transparent to users
 * Automatic management
 
---
-
-### Buffer Management
+## Buffer Management
 
 ![img/buffers.webp](img/buffers.webp "A kawaii felt craft scene depicting memory management as a cozy library where a PostgreSQL elephant librarian organizes data pages in cute felt buffer pools. Frequently accessed pages are shown as books with happy faces in the front shelves.")
 
-**Buffer Cache Components**:
+## Monitor buffer usage
+
 ```sql
--- Monitor buffer usage
 SELECT blks_read, blks_hit
 FROM pg_stat_database
 WHERE datname = 'mydb';
+```
 
--- Buffer hit ratio
+## Buffer hit ratio
+
+```sql
 SELECT 
   round(100.0 * blks_hit / (blks_hit + blks_read), 2) as hit_ratio
 FROM pg_stat_database;
 ```
 
---
+## WAL (Write-Ahead Log)
 
-### WAL (Write-Ahead Log)
-
-**Ensures Data Durability**:
+* Ensures Data Durability
 * Logs changes before writing to data files
 * Enables crash recovery
 * Supports replication
 * Critical for ACID compliance
 
-**WAL Configuration**:
+## Check WAL settings
+
 ```sql
--- Check WAL settings
 SHOW wal_level;
 SHOW synchronous_commit;
 SHOW checkpoint_timeout;
 ```
 
----
-
-## Module 2: Transaction Management 🔄
+# 2: Transaction Management
 
 ![img/02_transactions.webp](img/02_transactions.webp "A kawaii felt craft scene showing ACID properties as four adorable cube characters representing Atomicity, Consistency, Isolation, and Durability, all being conducted by a cute PostgreSQL elephant in a felt transaction environment.")
 
---
-
-### ACID Properties Quiz
+## Question
 
 Which ACID property ensures that transactions are all-or-nothing?
 
@@ -125,100 +175,80 @@ Which ACID property ensures that transactions are all-or-nothing?
 * Isolation
 * Durability
 
---
-
-### ACID Properties Deep Dive
+## ACID Properties Deep Dive
 
 ![img/acid.webp](img/acid.webp "A kawaii felt craft scene showing four adorable cube characters representing ACID properties. An Atomicity cube wearing a referee outfit, a Consistency cube with a balance scale, an Isolation cube with headphones, and a Durability cube with a shield, all being conducted by a cute PostgreSQL elephant.")
 
-**ACID Breakdown**:
+## ACID Breakdown
+
 * **Atomicity** - All-or-nothing execution
 * **Consistency** - Valid data only
 * **Isolation** - Concurrent transactions don't interfere
 * **Durability** - Committed changes are permanent
 
---
+## Transaction Isolation Levels
 
-### Transaction Isolation Levels
-
-**PostgreSQL Supports**:
+* PostgreSQL Supports
 * **Read Committed** (default)
 * **Repeatable Read**
 * **Serializable**
 
-**Isolation Trade-offs**:
-```ruby
-# Example: Read Committed
-Account.transaction do
-  balance = account.balance  # Can see other commits
-  sleep(1)
-  # Balance might have changed!
-end
-
-# Example: Repeatable Read  
-Account.transaction(isolation: :repeatable_read) do
-  balance = account.balance  # Consistent view
-  sleep(1)
-  # Same balance throughout transaction
-end
+## Example: Read Committed (default)
+```sql
+BEGIN;
+SELECT balance FROM accounts WHERE id = 1;  -- Can see other commits
+SELECT pg_sleep(10); -- Simulate delay (in real scenario, another transaction commits here)
+SELECT balance FROM accounts WHERE id = 1;  -- Balance might have changed!
+COMMIT;
+```
+## Example: Repeatable Read
+```sql
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SELECT balance FROM accounts WHERE id = 1;  -- Consistent view
+SELECT pg_sleep(10); -- Simulate delay (in real scenario, another transaction commits here)
+SELECT balance FROM accounts WHERE id = 1;  -- Same balance throughout transaction
+COMMIT;
 ```
 
---
+## MVCC (Multi-Version Concurrency Control)
 
-### MVCC (Multi-Version Concurrency Control)
-
-**How PostgreSQL Handles Concurrency**:
 * Each transaction sees a consistent snapshot
 * Updates create new row versions
 * Old versions remain for other transactions
 * Automatic cleanup via VACUUM
 
-**MVCC Benefits**:
+## MVCC Benefits
+
 * No read locks needed
 * High concurrency
 * Consistent reads
 * Automatic conflict resolution
 
----
-
-## Module 3: Query Optimization 🔍
+# 3: Query Optimization
 
 ![img/03_queries.webp](img/03_queries.webp "A kawaii felt craft scene depicting query optimization as a cute felt detective elephant examining query plans with a magnifying glass, surrounded by colorful index structures and performance graphs.")
 
---
+## Query Performance Experience
 
-### Query Performance Experience
-
-How often do you analyze query performance in your current role?
+What's your level?
 
 * Never - I just write queries
 * Sometimes - When things are slow
 * Regularly - Part of my routine
 * Always - Performance is critical
 
---
+## Index Types Overview
 
-### Index Types Overview
-
-**PostgreSQL Index Types**:
 * **B-tree** - Default, equality and range queries
 * **BRIN** - Block Range Index for time-series
 * **GiST** - Geometric/geographic data
 * **GIN** - Full-text search and arrays
 
---
+## B-tree Indexes
 
-### B-tree Indexes
-
-**Most Common Index Type**:
 ```sql
--- Basic B-tree index
 CREATE INDEX idx_users_email ON users(email);
-
--- Compound index
 CREATE INDEX idx_orders_composite ON orders(user_id, created_at);
-
--- Unique index
 CREATE UNIQUE INDEX idx_users_unique_email ON users(email);
 ```
 
@@ -228,118 +258,113 @@ CREATE UNIQUE INDEX idx_users_unique_email ON users(email);
 * Pattern matching (LIKE 'prefix%')
 * ORDER BY operations
 
---
+## BRIN Indexes
 
-### BRIN Indexes
-
-**Perfect for Time-Series Data**:
 ```sql
--- BRIN index for timestamps
-CREATE INDEX idx_events_time ON events 
-USING brin(created_at);
-
--- With custom page range
-CREATE INDEX idx_events_time_brin ON events 
-USING brin(created_at) WITH (pages_per_range = 128);
+CREATE INDEX idx_events_time
+  ON events 
+  USING brin(created_at);
 ```
 
-**BRIN Advantages**:
+BRIN with custom page range
+
+```sql
+CREATE INDEX idx_events_time_brin
+  ON events 
+  USING brin(created_at)
+   WITH (pages_per_range = 128);
+```
+
+## BRIN Advantages
+
 * Very small size (< 1% of table)
 * Great for append-only data
 * Efficient range queries
 * Low maintenance overhead
 
---
-
-### Query Plan Analysis
+# Query Plan Analysis
 
 ![img/query_plan.webp](img/query_plan.webp "A kawaii felt craft scene showing query plan analysis as a cute felt detective elephant examining a roadmap of database operations, with colorful felt nodes representing different query execution steps.")
 
-**Understanding Query Plans**:
+## EXPLAIN `<your query>`
+
 ```sql
--- Basic EXPLAIN
-EXPLAIN SELECT * FROM users WHERE email = 'test@example.com';
-
--- With execution statistics
-EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'test@example.com';
-
--- With buffer information
-EXPLAIN (ANALYZE, BUFFERS) 
-SELECT * FROM users WHERE email = 'test@example.com';
+EXPLAIN
+ SELECT * 
+ FROM users 
+ WHERE email = 'test@example.com';
 ```
 
---
+> Does not run the query
 
-### JOIN Types
+## EXPLAIN ANALYZE `<your query>`
 
-**Understanding Different JOINs**:
+```sql
+EXPLAIN ANALYZE
+ SELECT * 
+ FROM users
+ WHERE email = 'test@example.com';
+```
+> Runs and add execution statistics
 
-![img/inner_join.webp](img/inner_join.webp "A kawaii felt craft scene showing INNER JOIN as cute felt circles overlapping, with only the intersecting area highlighted, representing matching records from both tables.")
+## EXPLAIN BUFFERS
 
-![img/left_join.webp](img/left_join.webp "A kawaii felt craft scene showing LEFT JOIN as a felt circle on the left with an arrow pointing to a circle on the right, with the entire left circle highlighted, representing all records from the left table.")
+```sql
+EXPLAIN (ANALYZE, BUFFERS) 
+ SELECT *
+ FROM users
+ WHERE email = 'test@example.com';
+```
 
-![img/full_outer_join.webp](img/full_outer_join.webp "A kawaii felt craft scene showing FULL OUTER JOIN as two felt circles with arrows pointing to each other, with both entire circles highlighted, representing all records from both tables.")
-
-**JOIN Performance Tips**:
-* Use appropriate indexes
-* Consider join order
-* Watch for cartesian products
-* Use EXPLAIN to analyze
-
----
-
-## Module 4: TimescaleDB ⏰
+# 4: TimescaleDB
 
 ![img/04_timescaledb.webp](img/04_timescaledb.webp "A kawaii felt craft scene depicting TimescaleDB as a cute felt time machine with a PostgreSQL elephant, showing automatic partitioning and time-series optimization with colorful felt data chunks.")
 
---
+## Timescaledb is a Postgresql Extension
 
-### Time-Series Data Experience
+```sql
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+```
 
-How much time-series data do you work with?
+## TS Workload
+
+> How much time-series data do you work with?
 
 * None - Regular relational data only
 * Some - Occasional time-based queries
 * Lots - Time-series is important
 * Everything - Pure time-series applications
 
---
+## TimescaleDB Overview
 
-### TimescaleDB Overview
-
-**Built on PostgreSQL**:
+* Built on PostgreSQL
 * Automatic time-based partitioning
 * Continuous aggregates
 * SQL compatibility
 * Time-series optimizations
 
---
-
-### Hypertables
+## Hypertables
 
 **Automatic Time Partitioning**:
-```sql
--- Create hypertable
-SELECT create_hypertable('measurements', 'time',
-  chunk_time_interval => INTERVAL '1 day');
 
--- View chunks
+```sql
+SELECT create_hypertable(
+  'measurements',
+  'time',
+   chunk_time_interval => INTERVAL '1 day');
+
 SELECT show_chunks('measurements');
 
--- Add compression
 SELECT add_compression_policy('measurements', 
   INTERVAL '7 days');
 ```
-
---
-
-### Continuous Aggregates
+# Continuous Aggregates
 
 ![img/continuous_aggregates.webp](img/continuous_aggregates.webp "A kawaii felt craft scene depicting continuous aggregates as cute calculator characters doing group hugs. Shows the PostgreSQL elephant orchestrating automatic updates while felt data points combine into summary hearts.")
 
-**Automatic Materialized Views**:
+## Materialized views
+
 ```sql
--- Create continuous aggregate
 CREATE MATERIALIZED VIEW measurements_hourly
 WITH (timescaledb.continuous) AS
 SELECT time_bucket('1 hour', time) as bucket,
@@ -348,32 +373,43 @@ SELECT time_bucket('1 hour', time) as bucket,
        max(temperature) as max_temp
 FROM measurements
 GROUP BY bucket, device_id;
+```
 
--- Set refresh policy
+## Partial refresh continuous aggregates
+
+```sql
+SELECT refresh_continuous_aggregates(
+  'measurements_hourly',
+   now() - INTERVAL '1 day',
+   now() - INTERVAL '1 hour')
+```
+
+## Automatic refresh with policies
+
+```sql
 SELECT add_continuous_aggregate_policy('measurements_hourly',
   start_offset => INTERVAL '3 hours',
   end_offset => INTERVAL '1 hour',
   schedule_interval => INTERVAL '1 hour');
 ```
 
---
-
-### Time-Series Queries
+# Time-Series Queries
 
 ![img/time_series.webp](img/time_series.webp "A kawaii felt craft scene showing time-series analysis as a cute felt timeline with colorful data points, where a PostgreSQL elephant is analyzing trends and patterns in the felt data stream.")
 
-**TimescaleDB Functions**:
+## The `time_bucket` function
+
 ```sql
--- Time bucketing
 SELECT time_bucket('1 hour', time) as hour,
        avg(temperature) as avg_temp
 FROM measurements
 WHERE time > NOW() - INTERVAL '24 hours'
 GROUP BY hour
 ORDER BY hour;
+```### The `time_bucket_gapfill` function
 
--- Gap filling
-SELECT time_bucket('1 hour', time) as hour,
+```sql
+SELECT time_bucket_gapfill('1 hour', time) as hour,
        avg(temperature) as avg_temp,
        count(*) as readings
 FROM measurements
@@ -382,38 +418,27 @@ GROUP BY hour
 ORDER BY hour;
 ```
 
----
-
-## Performance Lab: Hands-On Optimization 🧪
-
---
-
-### Lab Setup
+# Lab Setup
 
 **What We'll Cover**:
 * Storage optimization
 * Index strategy
 * Query tuning
 * TimescaleDB features
-* Ruby performance
 
---
+## Exercise 1: Column Order
 
-### Storage Optimization Lab
-
-**Exercise 1: Column Order**:
 ```sql
--- Analyze table structure
-SELECT column_name, data_type, 
+SELECT column_name, data_type,
        pg_column_size(column_name::text) as size
 FROM information_schema.columns
 WHERE table_name = 'users'
 ORDER BY ordinal_position;
 ```
 
-**Exercise 2: TOAST Analysis**:
+## Exercise 2: TOAST Analysis
+
 ```sql
--- Check TOAST usage
 SELECT schemaname, tablename, attname,
        n_distinct, correlation
 FROM pg_stats
@@ -421,28 +446,23 @@ WHERE tablename = 'users'
   AND attname LIKE '%data%';
 ```
 
---
-
-### Index Strategy Lab
-
-**Exercise 3: Index Analysis**:
+## Exercise 3: Index Analysis
 ```sql
--- Find unused indexes
 SELECT schemaname, tablename, indexname, idx_scan
 FROM pg_stat_user_indexes
 WHERE idx_scan = 0
   AND idx_is_unique IS FALSE;
 
--- Check index usage
+ Check index usage
 SELECT schemaname, tablename, indexname,
        idx_scan, idx_tup_read, idx_tup_fetch
 FROM pg_stat_user_indexes
 ORDER BY idx_scan DESC;
 ```
 
-**Exercise 4: Query Plan Analysis**:
+## Exercise 4: Query Plan Analysis
+
 ```sql
--- Analyze slow queries
 EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
 SELECT u.name, COUNT(o.id) as order_count
 FROM users u
@@ -453,13 +473,8 @@ HAVING COUNT(o.id) > 5
 ORDER BY order_count DESC;
 ```
 
---
-
-### TimescaleDB Lab
-
-**Exercise 5: Hypertable Creation**:
+## Exercise 5: Hypertable Creation
 ```sql
--- Create time-series table
 CREATE TABLE sensor_data (
   time TIMESTAMPTZ NOT NULL,
   sensor_id TEXT NOT NULL,
@@ -467,20 +482,18 @@ CREATE TABLE sensor_data (
   humidity DOUBLE PRECISION
 );
 
--- Convert to hypertable
+ Convert to hypertable
 SELECT create_hypertable('sensor_data', 'time',
   chunk_time_interval => INTERVAL '1 day');
 
--- Add compression
+ Add compression
 SELECT add_compression_policy('sensor_data',
   INTERVAL '7 days');
 ```
 
---
+## Exercise 6: Continuous Aggregates
 
-**Exercise 6: Continuous Aggregates**:
 ```sql
--- Create continuous aggregate
 CREATE MATERIALIZED VIEW sensor_hourly
 WITH (timescaledb.continuous) AS
 SELECT time_bucket('1 hour', time) as bucket,
@@ -490,115 +503,113 @@ SELECT time_bucket('1 hour', time) as bucket,
 FROM sensor_data
 GROUP BY bucket, sensor_id;
 
--- Query the aggregate
+ Query the aggregate
 SELECT bucket, sensor_id, avg_temp, avg_humidity
 FROM sensor_hourly
 WHERE bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket DESC;
 ```
 
----
-
-## Performance Monitoring & Tuning 📊
-
---
-
-### Key Performance Metrics
+# Performance Monitoring
 
 **What to Monitor**:
+
 * Query execution time
 * Buffer hit ratio
 * Index usage
 * Lock contention
 * Connection usage
 
---
+## Monitoring Queries
 
-### Monitoring Queries
-
-**Essential Monitoring SQL**:
 ```sql
--- Database statistics
 SELECT datname, 
-       xact_commit, xact_rollback,
-       blks_read, blks_hit,
-       tup_returned, tup_fetched, tup_inserted
+  xact_commit, xact_rollback,
+  blks_read, blks_hit,
+  tup_returned, tup_fetched,
+  tup_inserted
 FROM pg_stat_database
 WHERE datname = current_database();
+```
 
--- Table statistics
+## Monitoring Table Statistics
+
+```sql
 SELECT schemaname, relname,
        seq_scan, seq_tup_read,
        idx_scan, idx_tup_fetch
 FROM pg_stat_user_tables
 ORDER BY seq_scan DESC;
+```
 
--- Index statistics
+## Monitoring Inddex Statistics
+
+```sql
 SELECT schemaname, tablename, indexname,
        idx_scan, idx_tup_read, idx_tup_fetch
 FROM pg_stat_user_indexes
 ORDER BY idx_scan DESC;
 ```
+## Storage and Memory Checklist
 
---
-
-### Performance Tuning Checklist
-
-**Storage & Memory**:
 * [ ] Monitor buffer hit ratio (>95%)
 * [ ] Check TOAST usage
 * [ ] Review VACUUM frequency
 * [ ] Optimize column order
 
-**Indexes**:
+## Indexes checklist
+
 * [ ] Remove unused indexes
 * [ ] Add missing indexes
 * [ ] Consider BRIN for time-series
 * [ ] Monitor index size
 
-**Queries**:
+## Queries checklist
+
 * [ ] Use EXPLAIN ANALYZE
 * [ ] Avoid N+1 queries
 * [ ] Optimize JOINs
 * [ ] Use appropriate data types
 
-**TimescaleDB**:
+## TimescaleDB
+
 * [ ] Set chunk intervals
 * [ ] Configure compression
 * [ ] Use continuous aggregates
 * [ ] Implement retention policies
 
----
-
-## Advanced Topics 🚀
-
---
-
-### Partitioning Strategies
+# Advanced Topics
 
 **When to Partition**:
+
 * Tables > 100GB
 * Time-based data retention
 * Different storage policies
 * Performance optimization
 
-**Partition Types**:
+## Partition by `RANGE`
+
 ```sql
--- Range partitioning
 CREATE TABLE events (
   id BIGINT,
   created_at TIMESTAMP,
   data JSONB
 ) PARTITION BY RANGE (created_at);
+```
 
--- List partitioning
+## Partition by `LIST`
+
+```sql
 CREATE TABLE orders (
   id BIGINT,
   status TEXT,
   data JSONB
 ) PARTITION BY LIST (status);
+```
 
--- Hash partitioning
+## Hash partitioning
+
+```sql
 CREATE TABLE users (
   id BIGINT,
   email TEXT,
@@ -606,9 +617,7 @@ CREATE TABLE users (
 ) PARTITION BY HASH (id);
 ```
 
---
-
-### Materialized Views
+## Materialized Views
 
 **When to Use**:
 * Complex, expensive queries
@@ -616,9 +625,9 @@ CREATE TABLE users (
 * Data warehouse scenarios
 * Periodic analytics
 
-**Example**:
+## Example Materialized view
+
 ```sql
--- Create materialized view
 CREATE MATERIALIZED VIEW daily_order_stats AS
 SELECT DATE_TRUNC('day', created_at) as date,
        COUNT(*) as order_count,
@@ -626,18 +635,18 @@ SELECT DATE_TRUNC('day', created_at) as date,
 FROM orders
 GROUP BY 1
 WITH DATA;
+```
 
--- Refresh periodically
+Then Refresh
+
+```sql
 REFRESH MATERIALIZED VIEW daily_order_stats;
 ```
 
---
-
-### Window Functions
+## Window Functions
 
 **Advanced Analytics**:
 ```sql
--- Running totals
 SELECT *,
        SUM(amount) OVER (
          ORDER BY created_at
@@ -645,8 +654,11 @@ SELECT *,
          AND CURRENT ROW
        ) as running_total
 FROM transactions;
+```
 
--- Ranking within groups
+## Ranking within groups
+
+```sql
 SELECT *,
        ROW_NUMBER() OVER (
          PARTITION BY department_id 
@@ -655,24 +667,15 @@ SELECT *,
 FROM employees;
 ```
 
----
-
-## Workshop Wrap-Up 🎉
-
---
-
-### Key Takeaways
+# Workshop Wrap-Up 🎉
 
 **What We Covered**:
 * Storage internals and optimization
 * Transaction management and ACID
 * Query optimization and indexing
 * TimescaleDB for time-series
-* Ruby/Rails performance
 
---
-
-### Performance Mindset
+## Performance Mindset
 
 **Remember**:
 * Measure before optimizing
@@ -681,49 +684,39 @@ FROM employees;
 * Monitor continuously
 * Test thoroughly
 
---
-
-### Resources & Next Steps
+## Resources
 
 **Learning Resources**:
 * PostgreSQL Official Documentation
 * TimescaleDB Documentation
-* Rails Performance Guide
 * Database Performance Tuning
 
+## Next Steps
+
 **Practice Projects**:
+
 * Build a monitoring dashboard
 * Optimize existing queries
 * Implement TimescaleDB
 * Create performance benchmarks
 
---
+## Last question
 
-### Final Check-in
-
-How confident do you feel about PostgreSQL performance optimization now?
+How do you feel about PostgreSQL performance optimization now?
 
 * Beginner - I understand the concepts
 * Intermediate - I can apply the techniques
 * Advanced - I can optimize complex systems
 * Expert - I can teach others
 
----
+## Thank You 🫶🏼
 
-## Thank You! 🙏
+* https://github.com/jonatas/postgresql-performance-workshops
+* https://ideia.me
+* https://www.linkedin.com/in/jonatasdp/
 
-**Questions & Discussion**
+> Thanks **TigerData** for the support
 
-* **Slides**: Available at https://github.com/jonatas/postgresql-performance-workshops
-* **Code Examples**: All examples in the workshop repository
-* **Contact**: https://ideia.me
-
---
-
-**Keep Learning**:
-* Practice with real data
-* Monitor your applications
-* Share knowledge with others
-* Stay updated with PostgreSQL releases
+## Bye
 
 ![img/intro.webp](img/intro.webp "A kawaii felt craft scene showing a cute PostgreSQL elephant wearing a graduation cap, surrounded by colorful felt data cubes and performance graphs, representing the successful completion of the learning journey.")

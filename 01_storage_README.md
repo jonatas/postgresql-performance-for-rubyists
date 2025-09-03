@@ -13,7 +13,7 @@ Before starting this module, ensure you understand:
 
 ## Learning Path
 
-1. **Basic Storage Concepts** (practice_storage)
+1. **Basic Storage Concepts** practice_storage.{[sql](practice_),ruby}
    - Understanding 8KB pages
    - Basic tuple structure
    - Data type storage requirements

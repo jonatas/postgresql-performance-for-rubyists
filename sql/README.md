@@ -2,7 +2,7 @@
 
 Welcome to the SQL edition of the PostgreSQL Performance Workshop! This version focuses on pure PostgreSQL optimization using SQL commands and `psql`. Perfect for database administrators, SQL developers, and anyone who wants to learn PostgreSQL optimization without language-specific frameworks.
 
-![img/05_ruby.webp](../shared/img/05_ruby.webp "A kawaii felt craft scene featuring a chubby felt elephant wearing tiny developer glasses, surrounded by SQL code snippets and database symbols")
+![img/05_ruby.webp](../img/05_ruby.webp "A kawaii felt craft scene featuring a chubby felt elephant wearing tiny developer glasses, surrounded by SQL code snippets and database symbols")
 
 ## 🎯 What You'll Learn
 
@@ -46,28 +46,34 @@ This SQL edition covers the same core PostgreSQL concepts as the Ruby version, b
 
 ### Manual Setup
 ```bash
-# 1. Ensure PostgreSQL is running
-psql -h localhost -U postgres -c "SELECT version();"
+# 1. Ensure PostgreSQL is running (Docker default in this repo uses port 5433)
+psql -h 0.0.0.0 -p 5433 -U postgres -c "SELECT version();"
 
 # 2. Create workshop database
-psql -h localhost -U postgres -c "CREATE DATABASE workshop_db;"
+psql -h 0.0.0.0 -p 5433 -U postgres -c "CREATE DATABASE workshop_db;"
 
 # 3. Test connection
-psql -h localhost -U postgres -d workshop_db -c "SELECT 'Workshop ready!' as status;"
+psql -h 0.0.0.0 -p 5433 -U postgres -d workshop_db -c "SELECT 'Workshop ready!' as status;"
+
+# Alternatively, if you exported DATABASE_URL (recommended):
+# psql "$DATABASE_URL" -c "SELECT 'Workshop ready!' as status;"
 ```
 
 ## 🚀 Getting Started
 
 ### Running Examples
 ```bash
-# Connect to the workshop database
-psql -h localhost -U postgres -d workshop_db
+# Connect to the workshop database (Docker default port 5433)
+psql -h 0.0.0.0 -p 5433 -U postgres -d workshop_db
 
 # Run a specific example
 \i sql/01_storage/practice_storage.sql
 
 # Or run from command line
-psql -h localhost -U postgres -d workshop_db -f sql/01_storage/practice_storage.sql
+psql -h 0.0.0.0 -p 5433 -U postgres -d workshop_db -f sql/01_storage/practice_storage.sql
+
+# Alternatively, using DATABASE_URL:
+# psql "$DATABASE_URL" -f sql/01_storage/practice_storage.sql
 ```
 
 ### Interactive Learning

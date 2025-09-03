@@ -17,17 +17,17 @@ Before starting this module, ensure you understand:
 
 ### **Installation**
 ```bash
-# Ensure PostgreSQL is running
-psql -h localhost -U postgres -c "SELECT version();"
+# Ensure PostgreSQL is running (Docker default in this repo uses port 5433)
+psql -h 0.0.0.0 -p 5433 -U postgres -c "SELECT version();"
 
-# Create workshop database
-psql -h localhost -U postgres -c "CREATE DATABASE workshop_db;"
+# Create workshop database (if not created by setup script)
+psql -h 0.0.0.0 -p 5433 -U postgres -c "CREATE DATABASE workshop_db;" || true
 ```
 
 ### **Running Examples**
 ```bash
-# Connect to the workshop database
-psql -h localhost -U postgres -d workshop_db
+# Connect to the workshop database (Docker default port 5433)
+psql -h 0.0.0.0 -p 5433 -U postgres -d workshop_db
 
 # Run storage analysis
 \i sql/01_storage/practice_storage.sql
@@ -37,38 +37,41 @@ psql -h localhost -U postgres -d workshop_db
 
 # Run WAL analysis
 \i sql/01_storage/practice_wal_final.sql
+
+# Alternatively, using DATABASE_URL
+# psql "$DATABASE_URL" -f sql/01_storage/practice_storage.sql
 ```
 
 ## 🚀 Quick Start Guide
 
 ### **Step 1: Verify PostgreSQL Connection**
 ```bash
-# Test connection to PostgreSQL
-psql -h localhost -U postgres -c "SELECT version();"
+# Test connection to PostgreSQL (Docker port 5433)
+psql -h 0.0.0.0 -p 5433 -U postgres -c "SELECT version();"
 ```
 
 ### **Step 2: Create Workshop Database**
 ```bash
 # Create the workshop database
-psql -h localhost -U postgres -c "CREATE DATABASE workshop_db;"
+psql -h 0.0.0.0 -p 5433 -U postgres -c "CREATE DATABASE workshop_db;" || true
 ```
 
 ### **Step 3: Run Storage Analysis**
 ```bash
 # Run the basic storage analysis
-psql -h localhost -U postgres -d workshop_db -f sql/01_storage/practice_storage.sql
+psql -h 0.0.0.0 -p 5433 -U postgres -d workshop_db -f sql/01_storage/practice_storage.sql
 ```
 
 ### **Step 4: Run Tuple Analysis**
 ```bash
 # Run the tuple analysis
-psql -h localhost -U postgres -d workshop_db -f sql/01_storage/practice_tuple.sql
+psql -h 0.0.0.0 -p 5433 -U postgres -d workshop_db -f sql/01_storage/practice_tuple.sql
 ```
 
 ### **Step 5: Run WAL Analysis**
 ```bash
 # Run the WAL analysis
-psql -h localhost -U postgres -d workshop_db -f sql/01_storage/practice_wal_final.sql
+psql -h 0.0.0.0 -p 5433 -U postgres -d workshop_db -f sql/01_storage/practice_wal_final.sql
 ```
 
 ## 📋 Script Descriptions
